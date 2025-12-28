@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Benguiat:wght@700&family=Bebas+Neue&family=Share+Tech+Mono&display=swap');
-/* Note: Benguiat is the Stranger Things font - using a similar alternative */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap');
+/* Stranger Things-inspired typography using available Google Fonts (Bebas Neue / Nosifer / Creepster as alternatives to Benguiat) */
 @import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Creepster&family=Special+Elite&display=swap');
 
 @tailwind base;
