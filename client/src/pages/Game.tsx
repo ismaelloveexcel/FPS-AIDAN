@@ -9,9 +9,11 @@ import { Level } from '@/game/Level';
 import { EnemyManager } from '@/game/Enemy';
 import { BossManager } from '@/game/Boss';
 import { PowerUpManager } from '@/game/PowerUp';
+import { WalkieTalkieHints } from '@/game/WalkieTalkie';
+import { audioManager } from '@/game/AudioManager';
 import { Button } from '@/components/ui/button';
 import { useSubmitScore, useScores } from '@/hooks/use-scores';
-import { Loader2, Trophy, Skull, Zap, Heart, Shield, Flame, Crosshair, Flashlight } from 'lucide-react';
+import { Loader2, Trophy, Skull, Zap, Heart, Shield, Flame, Crosshair, Flashlight, Volume2, VolumeX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -538,8 +540,36 @@ function UI() {
   const shield = useGameStore(state => state.shield);
   const { mutate: submitScore, isPending } = useSubmitScore();
   const [username, setUsername] = useState("");
+  const [isMuted, setIsMuted] = useState(false);
   const { toast } = useToast();
   const { data: scores } = useScores();
+
+  // Initialize audio on component mount
+  useEffect(() => {
+    audioManager.initializeGameAudio();
+    return () => {
+      audioManager.cleanup();
+    };
+  }, []);
+
+  // Play appropriate music based on game state
+  useEffect(() => {
+    if (isPlaying && !showLevelIntro) {
+      if (currentLevel === 1) {
+        audioManager.playMusic('level1-music', true);
+      } else if (currentLevel === 2) {
+        audioManager.playMusic('level2-music', true);
+      } else if (currentLevel === 3) {
+        audioManager.playMusic('level3-music', true);
+      }
+    } else if (!isPlaying && !isGameOver && !isVictory) {
+      audioManager.playMusic('menu-music', true);
+    } else if (isVictory) {
+      audioManager.playMusic('victory-music', true);
+    } else if (isGameOver) {
+      audioManager.stopMusic(true);
+    }
+  }, [isPlaying, currentLevel, showLevelIntro, isGameOver, isVictory]);
 
   const handleStart = () => {
     const canvas = document.querySelector('canvas');
@@ -555,10 +585,16 @@ function UI() {
     submitScore({ username, score }, {
       onSuccess: () => {
         toast({ title: "Score Saved!", description: `You ranked on the leaderboard!` });
+        audioManager.playSound('level-complete', 0.7);
         resetGame();
         setUsername("");
       }
     });
+  };
+
+  const toggleMute = () => {
+    audioManager.toggleMute();
+    setIsMuted(audioManager.getMuted());
   };
 
   return (
@@ -574,6 +610,14 @@ function UI() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
+          {/* Audio control */}
+          <button
+            onClick={toggleMute}
+            className="pointer-events-auto bg-black/50 border border-red-900 rounded p-2 hover:bg-red-900/30 transition-colors"
+          >
+            {isMuted ? <VolumeX className="w-5 h-5 text-red-500" /> : <Volume2 className="w-5 h-5 text-red-400" />}
+          </button>
+          
           <div className="hud-text text-2xl font-bold text-red-400 drop-shadow-[0_0_10px_rgba(255,0,0,0.5)]">
             HEALTH: {health}%
           </div>
@@ -598,6 +642,9 @@ function UI() {
           )}
         </div>
       </div>
+
+      {/* Walkie-Talkie Hints */}
+      <WalkieTalkieHints />
 
       {/* Crosshair - Stranger Things style */}
       <div className="crosshair-st" />

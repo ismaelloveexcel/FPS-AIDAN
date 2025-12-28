@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3, Raycaster, Vector2, Group, Object3D } from 'three';
 import { useGameStore, WEAPON_STATS, WeaponType } from './store';
+import { audioManager } from './AudioManager';
 
 const WEAPON_OFFSET = new Vector3(0.5, -0.3, 0.5);
 
@@ -177,6 +178,7 @@ export function Weapon() {
   const [isSwinging, setIsSwinging] = useState(false);
   const [isFiring, setIsFiring] = useState(false);
   const lastFireTime = useRef(0);
+  const flamethrowerSoundPlaying = useRef(false);
 
   // Weapon switching with number keys
   useEffect(() => {
@@ -202,11 +204,19 @@ export function Weapon() {
       
       if (e.button === 0) {
         attack();
+        // Start flamethrower sound when firing starts
+        if (currentWeapon === 'flamethrower' && !flamethrowerSoundPlaying.current) {
+          flamethrowerSoundPlaying.current = true;
+        }
       }
     };
 
     const handleMouseUp = () => {
       setIsFiring(false);
+      // Stop flamethrower sound when firing stops
+      if (flamethrowerSoundPlaying.current) {
+        flamethrowerSoundPlaying.current = false;
+      }
     };
 
     window.addEventListener('mousedown', handleMouseDown);
@@ -269,6 +279,9 @@ export function Weapon() {
     setTimeout(() => setIsRecoiling(false), 100);
     setTimeout(() => setMuzzleFlash(false), 50);
     
+    // Play pistol sound
+    audioManager.playSound('pistol-shot', 0.6);
+    
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);
     const intersects = raycaster.current.intersectObjects(scene.children, true);
 
@@ -294,6 +307,9 @@ export function Weapon() {
   const nailbatSwing = () => {
     setIsSwinging(true);
     setTimeout(() => setIsSwinging(false), 300);
+    
+    // Play bat swing sound
+    audioManager.playSound('bat-swing', 0.7);
     
     // Melee range check
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);
@@ -321,6 +337,12 @@ export function Weapon() {
   };
 
   const flamethrowerAttack = () => {
+    // Play flamethrower sound only once when firing starts
+    if (isFiring && !flamethrowerSoundPlaying.current) {
+      audioManager.playSound('flamethrower', 0.4);
+      flamethrowerSoundPlaying.current = true;
+    }
+    
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);
     const intersects = raycaster.current.intersectObjects(scene.children, true);
 

@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react';
 import { Vector3 } from 'three';
 import { useGameStore, ENEMY_STATS } from './store';
 import * as THREE from 'three';
+import { audioManager } from './AudioManager';
 
 interface EnemyProps {
   id: string;
@@ -16,6 +17,7 @@ export function Enemy({ id, position, health }: EnemyProps) {
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef(new Vector3(...position));
   const lastDamageTime = useRef(0);
+  const lastGrowlTime = useRef(0);
   
   const { camera } = useThree();
   const currentLevel = useGameStore(state => state.currentLevel);
@@ -35,6 +37,7 @@ export function Enemy({ id, position, health }: EnemyProps) {
         const now = Date.now();
         if (now - lastDamageTime.current > 1000) { // Damage cooldown
           takeDamage(stats.damage);
+          audioManager.playSound('damage-taken', 0.8);
           lastDamageTime.current = now;
         }
       }
@@ -60,6 +63,13 @@ export function Enemy({ id, position, health }: EnemyProps) {
 
   useFrame(({ clock }) => {
     if (!isPlaying) return;
+    
+    // Occasional growl sounds
+    const now = Date.now();
+    if (now - lastGrowlTime.current > 5000 + Math.random() * 10000) {
+      audioManager.playSound('enemy-growl', 0.3);
+      lastGrowlTime.current = now;
+    }
     
     // Chase AI - move towards player (camera position)
     const playerPos = camera.position;

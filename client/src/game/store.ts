@@ -61,8 +61,8 @@ export const LEVEL_CONFIG = {
     bossHealth: 500, 
     name: 'THE UPSIDE DOWN',
     subtitle: 'Defeat the Demogorgon',
-    storyText: 'The gate has opened. The Demogorgon hunts...',
-    victoryText: 'The Demogorgon falls, but the gate widens...',
+    storyText: 'The gate to the Upside Down has opened. A Demogorgon stalks the shadows, hunting for prey. You must close the gate before it\'s too late.',
+    victoryText: 'The Demogorgon falls into the darkness, but its death causes the gate to widen. The Mind Flayer stirs in the shadow realm...',
     unlockedWeapon: 'pistol' as WeaponType
   },
   2: { 
@@ -70,8 +70,8 @@ export const LEVEL_CONFIG = {
     bossHealth: 800, 
     name: 'THE SHADOW REALM',
     subtitle: 'Destroy the Mind Flayer',
-    storyText: 'Storm clouds gather. The Mind Flayer approaches...',
-    victoryText: 'The shadow recedes, but a darker evil awaits...',
+    storyText: 'Storm clouds gather as the Mind Flayer emerges from the shadows. Its psychic tendrils reach out to consume all of Hawkins. Stand your ground!',
+    victoryText: 'The Mind Flayer\'s shadow recedes, but something far worse awakens. Vecna has been watching. The final battle awaits...',
     unlockedWeapon: 'nailbat' as WeaponType
   },
   3: { 
@@ -79,8 +79,8 @@ export const LEVEL_CONFIG = {
     bossHealth: 1500, 
     name: 'VECNA\'S LAIR',
     subtitle: 'End Vecna\'s Terror',
-    storyText: 'The clock chimes. Vecna\'s curse begins...',
-    victoryText: 'Vecna is defeated! Hawkins is saved!',
+    storyText: 'The clock strikes midnight. Vecna\'s curse spreads through Hawkins. This is your last chance. Defeat Vecna or watch the world fall into darkness.',
+    victoryText: 'Vecna is defeated! The gates close, the curse lifts. Hawkins is saved. You are a hero!',
     unlockedWeapon: 'flamethrower' as WeaponType
   },
 };
