@@ -178,6 +178,7 @@ export function Weapon() {
   const [isSwinging, setIsSwinging] = useState(false);
   const [isFiring, setIsFiring] = useState(false);
   const lastFireTime = useRef(0);
+  const flamethrowerSoundPlaying = useRef(false);
 
   // Weapon switching with number keys
   useEffect(() => {
@@ -203,11 +204,19 @@ export function Weapon() {
       
       if (e.button === 0) {
         attack();
+        // Start flamethrower sound when firing starts
+        if (currentWeapon === 'flamethrower' && !flamethrowerSoundPlaying.current) {
+          flamethrowerSoundPlaying.current = true;
+        }
       }
     };
 
     const handleMouseUp = () => {
       setIsFiring(false);
+      // Stop flamethrower sound when firing stops
+      if (flamethrowerSoundPlaying.current) {
+        flamethrowerSoundPlaying.current = false;
+      }
     };
 
     window.addEventListener('mousedown', handleMouseDown);
@@ -328,9 +337,10 @@ export function Weapon() {
   };
 
   const flamethrowerAttack = () => {
-    // Play flamethrower sound (will loop while firing)
-    if (isFiring) {
+    // Play flamethrower sound only once when firing starts
+    if (isFiring && !flamethrowerSoundPlaying.current) {
       audioManager.playSound('flamethrower', 0.4);
+      flamethrowerSoundPlaying.current = true;
     }
     
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);

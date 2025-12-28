@@ -2,6 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from './store';
 import { Radio } from 'lucide-react';
 
+// Timing constants for hint system
+const MIN_HINT_INTERVAL_MS = 8000; // Minimum time between hints
+const POWER_UP_HINT_COOLDOWN_MS = 15000; // Cooldown for power-up hints
+
 interface Hint {
   id: string;
   character: 'Dustin' | 'Steve' | 'Nancy' | 'Eleven';
@@ -70,8 +74,8 @@ export function WalkieTalkieHints() {
 
   const showHint = (hints: typeof HINTS[keyof typeof HINTS], key: string) => {
     const now = Date.now();
-    // Prevent spam - at least 8 seconds between hints
-    if (now - lastHintTime.current < 8000) return;
+    // Prevent spam - use minimum interval between hints
+    if (now - lastHintTime.current < MIN_HINT_INTERVAL_MS) return;
     
     // Don't show the same hint twice
     if (shownHints.current.has(key)) return;
@@ -147,7 +151,7 @@ export function WalkieTalkieHints() {
   useEffect(() => {
     if (isPlaying && powerUps.length > 0) {
       const now = Date.now();
-      if (now - lastHintTime.current > 15000) {
+      if (now - lastHintTime.current > POWER_UP_HINT_COOLDOWN_MS) {
         showHint(HINTS.powerUpNearby, 'powerUpNearby');
       }
     }
