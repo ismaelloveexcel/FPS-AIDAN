@@ -31,11 +31,11 @@ const HINTS = {
     { character: 'Steve' as const, message: "Take this nail bat! It's saved my life more times than I can count.", duration: 4000 },
   ],
   level3Start: [
-    { character: 'Nancy' as const, message: 'Vecna... If we don't stop him now, everyone in Hawkins is doomed.', duration: 4500 },
-    { character: 'Dustin' as const, message: 'Remember, he plays mind tricks. Don't let him get in your head!', duration: 4000 },
+    { character: 'Nancy' as const, message: "Vecna... If we don't stop him now, everyone in Hawkins is doomed.", duration: 4500 },
+    { character: 'Dustin' as const, message: "Remember, he plays mind tricks. Don't let him get in your head!", duration: 4000 },
   ],
   level3WeaponUnlock: [
-    { character: 'Steve' as const, message: 'Flamethrower! Now we're talking. Light him up!', duration: 3500 },
+    { character: 'Steve' as const, message: "Flamethrower! Now we're talking. Light him up!", duration: 3500 },
   ],
   lowHealth: [
     { character: 'Dustin' as const, message: "Your health is critical! Find an Eggo waffle, quick!", duration: 3500 },
