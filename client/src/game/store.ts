@@ -464,7 +464,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         break;
     }
 
-    return updates as GameState;
+    return updates;
   }),
 
   // Flashlight
