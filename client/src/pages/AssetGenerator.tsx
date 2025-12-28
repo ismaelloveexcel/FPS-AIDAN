@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Cube, Image, ArrowLeft } from 'lucide-react';
+import { Loader2, Download, Box, Image, ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
 
 const textTo3DSchema = z.object({
@@ -120,7 +120,7 @@ export default function AssetGenerator() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Cube className="w-5 h-5" />
+                <Box className="w-5 h-5" />
                 Text to 3D
               </CardTitle>
               <CardDescription>
@@ -186,7 +186,7 @@ export default function AssetGenerator() {
                       </>
                     ) : (
                       <>
-                        <Cube className="w-4 h-4 mr-2" />
+                        <Box className="w-4 h-4 mr-2" />
                         Generate 3D Model
                       </>
                     )}
