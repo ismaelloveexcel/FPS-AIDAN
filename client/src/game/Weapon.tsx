@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3, Raycaster, Vector2, Group, Object3D } from 'three';
-import { useGameStore, WEAPON_STATS, WeaponType } from './store';
+import { useGameStore, WEAPON_STATS } from './store';
 
 const WEAPON_OFFSET = new Vector3(0.5, -0.3, 0.5);
 
