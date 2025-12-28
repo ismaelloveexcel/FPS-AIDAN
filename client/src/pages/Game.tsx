@@ -20,6 +20,7 @@ function DedicationScreen({ onComplete }: { onComplete: () => void }) {
   const [isVisible, setIsVisible] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Try to play the dedication song
@@ -30,7 +31,7 @@ function DedicationScreen({ onComplete }: { onComplete: () => void }) {
       console.log('Audio autoplay blocked by browser');
     });
 
-    // Auto-dismiss after 6 seconds
+    // Auto-dismiss after 5 seconds
     const timer = setTimeout(() => {
       setFadeOut(true);
       setTimeout(() => {
@@ -38,14 +39,16 @@ function DedicationScreen({ onComplete }: { onComplete: () => void }) {
         onComplete();
         // Fade out audio
         if (audioRef.current) {
-          const fadeAudio = setInterval(() => {
+          fadeIntervalRef.current = setInterval(() => {
             if (audioRef.current && audioRef.current.volume > 0.1) {
               audioRef.current.volume -= 0.1;
             } else {
               if (audioRef.current) {
                 audioRef.current.pause();
               }
-              clearInterval(fadeAudio);
+              if (fadeIntervalRef.current) {
+                clearInterval(fadeIntervalRef.current);
+              }
             }
           }, 200);
         }
@@ -54,6 +57,9 @@ function DedicationScreen({ onComplete }: { onComplete: () => void }) {
 
     return () => {
       clearTimeout(timer);
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+      }
       if (audioRef.current) {
         audioRef.current.pause();
       }
