@@ -121,7 +121,6 @@ interface GameState {
   shotsFired: number;
   shotsHit: number;
   levelStartTime: number;
-  totalPlayTime: number;
   
   // Actions
   setDifficulty: (difficulty: Difficulty) => void;
