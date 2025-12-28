@@ -215,7 +215,7 @@ export function Weapon() {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isPlaying, showLevelIntro, showLevelComplete, currentWeapon]);
+  }, [isPlaying, showLevelIntro, showLevelComplete, currentWeapon, attack]);
 
   // Continuous flamethrower firing
   useFrame(() => {
