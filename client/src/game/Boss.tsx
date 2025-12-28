@@ -6,6 +6,9 @@ import * as THREE from 'three';
 import { useGameStore, BossType } from './store';
 import { audioManager } from './AudioManager';
 
+// Constants
+const VECNA_TENDRIL_COUNT = 4;
+
 interface BossProps {
   id: string;
   type: BossType;
@@ -214,13 +217,13 @@ function Vecna({ position }: { position: [number, number, number] }) {
       </mesh>
       
       {/* Tendrils of dark energy */}
-      {[0, 1, 2, 3].map((i) => (
+      {Array.from({ length: VECNA_TENDRIL_COUNT }).map((_, i) => (
         <mesh 
           key={i}
           position={[
-            Math.cos((i / 4) * Math.PI * 2) * 2.5,
+            Math.cos((i / VECNA_TENDRIL_COUNT) * Math.PI * 2) * 2.5,
             0,
-            Math.sin((i / 4) * Math.PI * 2) * 2.5
+            Math.sin((i / VECNA_TENDRIL_COUNT) * Math.PI * 2) * 2.5
           ]}
         >
           <cylinderGeometry args={[0.1, 0.05, 3, 8]} />

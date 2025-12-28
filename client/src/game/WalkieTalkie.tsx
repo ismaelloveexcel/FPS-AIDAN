@@ -147,12 +147,17 @@ export function WalkieTalkieHints() {
     }
   }, [isPlaying, health]);
 
-  // Power-up nearby
+  // Power-up nearby - only trigger when new power-ups appear
   useEffect(() => {
     if (isPlaying && powerUps.length > 0) {
       const now = Date.now();
+      // Only show hint if enough time has passed since last hint
       if (now - lastHintTime.current > POWER_UP_HINT_COOLDOWN_MS) {
-        showHint(HINTS.powerUpNearby, 'powerUpNearby');
+        // Use a timeout to debounce rapid changes
+        const timeoutId = setTimeout(() => {
+          showHint(HINTS.powerUpNearby, 'powerUpNearby');
+        }, 1000);
+        return () => clearTimeout(timeoutId);
       }
     }
   }, [isPlaying, powerUps.length]);

@@ -67,10 +67,10 @@ function UpsideDownPortal() {
       innerRingRef.current.rotation.z = -clock.getElapsedTime() * 0.5;
     }
     if (outerRingRef.current && outerRingRef.current.material) {
-      // Pulsing opacity effect
-      const pulse = Math.sin(clock.getElapsedTime() * 2) * 0.2 + 0.5;
-      const material = outerRingRef.current.material as THREE.MeshBasicMaterial;
-      if (material.opacity !== undefined) {
+      // Pulsing opacity effect with type-safe material access
+      const material = outerRingRef.current.material;
+      if (material instanceof THREE.MeshBasicMaterial && material.transparent) {
+        const pulse = Math.sin(clock.getElapsedTime() * 2) * 0.2 + 0.5;
         material.opacity = pulse;
       }
     }
