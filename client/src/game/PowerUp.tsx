@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useSphere } from '@react-three/cannon';
 import * as THREE from 'three';
-import { useGameStore, PowerUpType, POWERUP_CONFIG } from './store';
+import { useGameStore, PowerUpType } from './store';
 
 interface PowerUpProps {
   id: string;
