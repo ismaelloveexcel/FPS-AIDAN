@@ -512,7 +512,7 @@ function DifficultySelector({ onSelect }: { onSelect: () => void }) {
             onClick={() => setDifficulty(d.value)}
             className={`flex-1 py-3 px-4 rounded border-2 transition-all font-mono text-sm
               ${difficulty === d.value 
-                ? `border-${d.color}-500 bg-${d.color}-900/50 text-${d.color}-300` 
+                ? 'border-transparent text-white' 
                 : 'border-red-900/30 bg-black/30 text-red-600 hover:border-red-700'}`}
             style={{
               borderColor: difficulty === d.value ? 
