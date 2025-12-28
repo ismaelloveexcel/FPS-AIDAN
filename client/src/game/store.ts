@@ -121,6 +121,7 @@ interface GameState {
   shotsFired: number;
   shotsHit: number;
   levelStartTime: number;
+  totalPlayTime: number;
   
   // Actions
   setDifficulty: (difficulty: Difficulty) => void;
@@ -498,5 +499,26 @@ export const useGameStore = create<GameState>((set, get) => ({
     showVictoryCutscene: false, 
     isVictory: true, 
     isPlaying: false 
+  }),
+
+  // Boss phase actions
+  setBossPhase: (phase) => set((state) => {
+    if (!state.boss) return state;
+    return { boss: { ...state.boss, phase } };
+  }),
+
+  setBossTeleporting: (isTeleporting) => set((state) => {
+    if (!state.boss) return state;
+    return { boss: { ...state.boss, isTeleporting, isInvulnerable: isTeleporting } };
+  }),
+
+  activateClockCurse: () => set((state) => {
+    if (!state.boss) return state;
+    return { boss: { ...state.boss, clockCurseActive: true } };
+  }),
+
+  spawnVines: () => set((state) => {
+    if (!state.boss) return state;
+    return { boss: { ...state.boss, hasVines: true } };
   })
 }));

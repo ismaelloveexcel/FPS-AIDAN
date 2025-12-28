@@ -1,14 +1,107 @@
 import { useBox } from '@react-three/cannon';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, Suspense } from 'react';
 import { Vector3 } from 'three';
 import { useGameStore, ENEMY_STATS } from './store';
 import * as THREE from 'three';
+import { useGLTF } from '@react-three/drei';
+import { useGameAssetPath } from './useGameAsset';
 
 interface EnemyProps {
   id: string;
   position: [number, number, number];
   health: number;
+}
+
+function EnemyModel({ modelPath, damageGlow }: { modelPath: string; damageGlow: number }) {
+  const { scene } = useGLTF(modelPath);
+  const clonedScene = scene.clone();
+  
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          const mat = child.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity = damageGlow;
+        }
+      }
+    });
+  }, [clonedScene, damageGlow]);
+  
+  return <primitive object={clonedScene} scale={1.5} />;
+}
+
+// Fallback procedural enemy geometry
+function ProceduralEnemy({ colors, damageGlow }: { colors: { body: string; accent: string; glow: string }; damageGlow: number }) {
+  return (
+    <>
+      {/* Body */}
+      <mesh castShadow receiveShadow>
+        <capsuleGeometry args={[0.4, 0.8, 4, 8]} />
+        <meshStandardMaterial 
+          color={colors.body}
+          roughness={0.9}
+          metalness={0.1}
+        />
+      </mesh>
+      
+      {/* Head petals */}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <mesh 
+          key={i}
+          position={[
+            Math.cos((i / 5) * Math.PI * 2) * 0.3,
+            0.8,
+            Math.sin((i / 5) * Math.PI * 2) * 0.3
+          ]}
+          rotation={[
+            Math.cos((i / 5) * Math.PI * 2) * 0.3,
+            (i / 5) * Math.PI * 2,
+            0.2
+          ]}
+          castShadow
+        >
+          <coneGeometry args={[0.15, 0.5, 4]} />
+          <meshStandardMaterial 
+            color={colors.accent}
+            emissive={colors.accent}
+            emissiveIntensity={damageGlow}
+            roughness={0.7}
+          />
+        </mesh>
+      ))}
+
+      {/* Glowing core */}
+      <mesh position={[0, 0.6, 0]}>
+        <sphereGeometry args={[0.15]} />
+        <meshBasicMaterial color={colors.glow} />
+      </mesh>
+
+      {/* Legs */}
+      {[-0.4, 0.4].map((x) => (
+        [-0.3, 0.3].map((z) => (
+          <mesh
+            key={`${x}-${z}`}
+            position={[x, -0.3, z]}
+            rotation={[0.3 * (z > 0 ? 1 : -1), 0, 0.2 * (x > 0 ? 1 : -1)]}
+            castShadow
+          >
+            <cylinderGeometry args={[0.05, 0.03, 0.5]} />
+            <meshStandardMaterial color="#0a0505" roughness={0.8} />
+          </mesh>
+        ))
+      ))}
+
+      {/* Eerie glow */}
+      <pointLight 
+        color={colors.glow} 
+        intensity={0.5 + damageGlow} 
+        distance={3} 
+      />
+    </>
+  );
 }
 
 // Demodog - smaller demogorgon-like creature with chase AI
@@ -21,6 +114,9 @@ export function Enemy({ id, position, health }: EnemyProps) {
   const currentLevel = useGameStore(state => state.currentLevel);
   const takeDamage = useGameStore(state => state.takeDamage);
   const isPlaying = useGameStore(state => state.isPlaying);
+  
+  // Check for generated enemy model
+  const enemyModelPath = useGameAssetPath('demogorgon_minion');
   
   const stats = ENEMY_STATS[currentLevel];
 
@@ -91,69 +187,17 @@ export function Enemy({ id, position, health }: EnemyProps) {
 
   return (
     <group ref={groupRef} position={position}>
-      <mesh ref={ref as any} castShadow receiveShadow>
-        {/* Body */}
-        <capsuleGeometry args={[0.4, 0.8, 4, 8]} />
-        <meshStandardMaterial 
-          color={colors.body}
-          roughness={0.9}
-          metalness={0.1}
-        />
+      <mesh ref={ref as any} visible={false}>
+        <boxGeometry args={[1.2, 1.2, 1.5]} />
       </mesh>
       
-      {/* Head petals */}
-      {[0, 1, 2, 3, 4].map((i) => (
-        <mesh 
-          key={i}
-          position={[
-            Math.cos((i / 5) * Math.PI * 2) * 0.3,
-            0.8,
-            Math.sin((i / 5) * Math.PI * 2) * 0.3
-          ]}
-          rotation={[
-            Math.cos((i / 5) * Math.PI * 2) * 0.3,
-            (i / 5) * Math.PI * 2,
-            0.2
-          ]}
-          castShadow
-        >
-          <coneGeometry args={[0.15, 0.5, 4]} />
-          <meshStandardMaterial 
-            color={colors.accent}
-            emissive={colors.accent}
-            emissiveIntensity={damageGlow}
-            roughness={0.7}
-          />
-        </mesh>
-      ))}
-
-      {/* Glowing core */}
-      <mesh position={[0, 0.6, 0]}>
-        <sphereGeometry args={[0.15]} />
-        <meshBasicMaterial color={colors.glow} />
-      </mesh>
-
-      {/* Legs */}
-      {[-0.4, 0.4].map((x) => (
-        [-0.3, 0.3].map((z) => (
-          <mesh
-            key={`${x}-${z}`}
-            position={[x, -0.3, z]}
-            rotation={[0.3 * (z > 0 ? 1 : -1), 0, 0.2 * (x > 0 ? 1 : -1)]}
-            castShadow
-          >
-            <cylinderGeometry args={[0.05, 0.03, 0.5]} />
-            <meshStandardMaterial color="#0a0505" roughness={0.8} />
-          </mesh>
-        ))
-      ))}
-
-      {/* Eerie glow */}
-      <pointLight 
-        color={colors.glow} 
-        intensity={0.5 + damageGlow} 
-        distance={3} 
-      />
+      {enemyModelPath ? (
+        <Suspense fallback={<ProceduralEnemy colors={colors} damageGlow={damageGlow} />}>
+          <EnemyModel modelPath={enemyModelPath} damageGlow={damageGlow} />
+        </Suspense>
+      ) : (
+        <ProceduralEnemy colors={colors} damageGlow={damageGlow} />
+      )}
     </group>
   );
 }
