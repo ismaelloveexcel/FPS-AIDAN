@@ -223,7 +223,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   
   startGame: () => {
-    const { difficulty } = get();
     set({ 
       isPlaying: true, 
       isGameOver: false, 
