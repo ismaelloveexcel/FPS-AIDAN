@@ -499,26 +499,5 @@ export const useGameStore = create<GameState>((set, get) => ({
     showVictoryCutscene: false, 
     isVictory: true, 
     isPlaying: false 
-  }),
-
-  // Vecna boss mechanics
-  setBossPhase: (phase) => set((state) => {
-    if (!state.boss) return state;
-    return { boss: { ...state.boss, phase } };
-  }),
-
-  setBossTeleporting: (isTeleporting) => set((state) => {
-    if (!state.boss) return state;
-    return { boss: { ...state.boss, isTeleporting, isInvulnerable: isTeleporting } };
-  }),
-
-  activateClockCurse: () => set((state) => {
-    if (!state.boss || state.boss.type !== 'vecna') return state;
-    return { boss: { ...state.boss, clockCurseActive: true } };
-  }),
-
-  spawnVines: () => set((state) => {
-    if (!state.boss || state.boss.type !== 'vecna') return state;
-    return { boss: { ...state.boss, hasVines: true } };
   })
 }));
