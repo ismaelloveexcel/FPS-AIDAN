@@ -391,7 +391,6 @@ function WeaponHUD() {
 
 // Power-up Effects HUD
 function PowerUpHUD() {
-  const activeEffects = useGameStore(state => state.activeEffects);
   const shield = useGameStore(state => state.shield);
   const speedMultiplier = useGameStore(state => state.speedMultiplier);
   const flashlightBattery = useGameStore(state => state.flashlightBattery);
