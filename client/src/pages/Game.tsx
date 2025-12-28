@@ -121,7 +121,6 @@ function DedicationScreen({ onComplete }: { onComplete: () => void }) {
 // Boss health bar component
 function BossHealthBar() {
   const boss = useGameStore(state => state.boss);
-  const currentLevel = useGameStore(state => state.currentLevel);
   
   if (!boss) return null;
   
