@@ -4,6 +4,7 @@ import { useBox } from '@react-three/cannon';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore, BossType } from './store';
+import { audioManager } from './AudioManager';
 
 interface BossProps {
   id: string;
@@ -14,6 +15,7 @@ interface BossProps {
 // Demogorgon - Level 1 Boss (using GLB model)
 function Demogorgon({ position }: { position: [number, number, number] }) {
   const groupRef = useRef<THREE.Group>(null);
+  const lastRoarTime = useRef(0);
   const { scene } = useGLTF('/demogorgon.glb');
   
   const [bodyRef] = useBox(() => ({
@@ -35,6 +37,9 @@ function Demogorgon({ position }: { position: [number, number, number] }) {
         child.receiveShadow = true;
       }
     });
+    
+    // Initial roar when boss spawns
+    setTimeout(() => audioManager.playSound('boss-roar', 0.6), 500);
   }, [clonedScene]);
 
   useFrame(({ clock }) => {
@@ -42,6 +47,13 @@ function Demogorgon({ position }: { position: [number, number, number] }) {
       // Menacing sway animation
       groupRef.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.5) * 0.2;
       groupRef.current.position.y = position[1] + Math.sin(clock.getElapsedTime() * 2) * 0.3;
+      
+      // Periodic roar
+      const now = Date.now();
+      if (now - lastRoarTime.current > 10000 + Math.random() * 5000) {
+        audioManager.playSound('boss-roar', 0.5);
+        lastRoarTime.current = now;
+      }
     }
   });
 
@@ -64,6 +76,7 @@ function Demogorgon({ position }: { position: [number, number, number] }) {
 // Mind Flayer - Level 2 Boss (using GLB model)
 function MindFlayer({ position }: { position: [number, number, number] }) {
   const groupRef = useRef<THREE.Group>(null);
+  const lastRoarTime = useRef(0);
   const { scene } = useGLTF('/mindflayer.glb');
   
   const [bodyRef] = useBox(() => ({
@@ -83,6 +96,9 @@ function MindFlayer({ position }: { position: [number, number, number] }) {
         child.receiveShadow = true;
       }
     });
+    
+    // Initial roar
+    setTimeout(() => audioManager.playSound('boss-roar', 0.7), 500);
   }, [clonedScene]);
 
   useFrame(({ clock }) => {
@@ -90,6 +106,13 @@ function MindFlayer({ position }: { position: [number, number, number] }) {
       // Swirling, ethereal movement
       groupRef.current.rotation.y = clock.getElapsedTime() * 0.1;
       groupRef.current.position.y = position[1] + Math.sin(clock.getElapsedTime() * 1.5) * 0.5;
+      
+      // Periodic roar
+      const now = Date.now();
+      if (now - lastRoarTime.current > 12000 + Math.random() * 6000) {
+        audioManager.playSound('boss-roar', 0.6);
+        lastRoarTime.current = now;
+      }
     }
   });
 
@@ -112,6 +135,7 @@ function MindFlayer({ position }: { position: [number, number, number] }) {
 // Vecna - Level 3 Final Boss (using GLB model)
 function Vecna({ position }: { position: [number, number, number] }) {
   const groupRef = useRef<THREE.Group>(null);
+  const lastRoarTime = useRef(0);
   const { scene } = useGLTF('/vecna.glb');
   
   const [bodyRef] = useBox(() => ({
@@ -131,6 +155,9 @@ function Vecna({ position }: { position: [number, number, number] }) {
         child.receiveShadow = true;
       }
     });
+    
+    // Initial roar
+    setTimeout(() => audioManager.playSound('boss-roar', 0.8), 500);
   }, [clonedScene]);
 
   useFrame(({ clock }) => {
@@ -138,6 +165,13 @@ function Vecna({ position }: { position: [number, number, number] }) {
       // Floating, menacing presence
       groupRef.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.3) * 0.15;
       groupRef.current.position.y = position[1] + Math.sin(clock.getElapsedTime()) * 0.4;
+      
+      // Periodic roar - Vecna roars more frequently for tension
+      const now = Date.now();
+      if (now - lastRoarTime.current > 8000 + Math.random() * 4000) {
+        audioManager.playSound('boss-roar', 0.7);
+        lastRoarTime.current = now;
+      }
     }
   });
 

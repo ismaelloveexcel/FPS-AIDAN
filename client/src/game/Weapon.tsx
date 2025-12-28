@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3, Raycaster, Vector2, Group, Object3D } from 'three';
 import { useGameStore, WEAPON_STATS, WeaponType } from './store';
+import { audioManager } from './AudioManager';
 
 const WEAPON_OFFSET = new Vector3(0.5, -0.3, 0.5);
 
@@ -269,6 +270,9 @@ export function Weapon() {
     setTimeout(() => setIsRecoiling(false), 100);
     setTimeout(() => setMuzzleFlash(false), 50);
     
+    // Play pistol sound
+    audioManager.playSound('pistol-shot', 0.6);
+    
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);
     const intersects = raycaster.current.intersectObjects(scene.children, true);
 
@@ -294,6 +298,9 @@ export function Weapon() {
   const nailbatSwing = () => {
     setIsSwinging(true);
     setTimeout(() => setIsSwinging(false), 300);
+    
+    // Play bat swing sound
+    audioManager.playSound('bat-swing', 0.7);
     
     // Melee range check
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);
@@ -321,6 +328,11 @@ export function Weapon() {
   };
 
   const flamethrowerAttack = () => {
+    // Play flamethrower sound (will loop while firing)
+    if (isFiring) {
+      audioManager.playSound('flamethrower', 0.4);
+    }
+    
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);
     const intersects = raycaster.current.intersectObjects(scene.children, true);
 
