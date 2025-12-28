@@ -624,7 +624,6 @@ function UI() {
       
       {/* Victory cutscene */}
       <VictoryCutscene />
-      <LevelComplete />
 
       {/* Start/Game Over/Victory Overlay */}
       {(!isPlaying || isGameOver || isVictory) && !useGameStore.getState().showLevelIntro && (

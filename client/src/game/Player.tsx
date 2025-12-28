@@ -6,6 +6,7 @@ import { useGameStore } from './store';
 
 const BASE_SPEED = 5;
 const JUMP_FORCE = 4;
+const FLASHLIGHT_DRAIN_RATE = 2; // Percent per second
 
 export function Player() {
   const { camera } = useThree();
@@ -71,7 +72,7 @@ export function Player() {
 
     // Drain flashlight battery when on
     if (flashlightOn && isPlaying) {
-      drainFlashlightBattery(delta * 2); // Drain 2% per second
+      drainFlashlightBattery(delta * FLASHLIGHT_DRAIN_RATE);
     }
 
     // Manual camera sync
