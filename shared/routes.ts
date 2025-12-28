@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { insertScoreSchema, scores } from './schema';
+import { insertScoreSchema, scores, type InsertScore } from './schema';
+
+export type { InsertScore };
 
 export const errorSchemas = {
   validation: z.object({

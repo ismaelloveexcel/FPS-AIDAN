@@ -1,36 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap');
+/* Stranger Things-inspired typography using available Google Fonts (Bebas Neue / Nosifer / Creepster as alternatives to Benguiat) */
+@import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Creepster&family=Special+Elite&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-display: 'Black Ops One', cursive;
-  --font-body: 'Rajdhani', sans-serif;
+  /* Stranger Things inspired fonts */
+  --font-display: 'Nosifer', 'Creepster', cursive;
+  --font-body: 'Special Elite', 'Bebas Neue', sans-serif;
   --font-mono: 'Share Tech Mono', monospace;
 
-  /* Cyberpunk / Sci-fi Palette */
-  --background: 220 15% 10%;
-  --foreground: 180 100% 90%;
+  /* Stranger Things / Upside Down Palette - Dark reds and blacks */
+  --background: 0 10% 3%;
+  --foreground: 0 60% 80%;
   
-  --primary: 180 100% 50%;
-  --primary-foreground: 220 20% 10%;
+  --primary: 0 80% 45%;
+  --primary-foreground: 0 0% 100%;
   
-  --secondary: 320 100% 60%;
+  --secondary: 340 70% 40%;
   --secondary-foreground: 0 0% 100%;
   
-  --muted: 220 20% 20%;
-  --muted-foreground: 220 20% 60%;
+  --muted: 0 20% 10%;
+  --muted-foreground: 0 30% 50%;
   
-  --accent: 45 100% 60%;
-  --accent-foreground: 220 20% 10%;
+  --accent: 30 90% 50%;
+  --accent-foreground: 0 0% 10%;
   
-  --destructive: 0 100% 60%;
+  --destructive: 0 100% 50%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 220 20% 25%;
-  --input: 220 20% 25%;
-  --ring: 180 100% 50%;
+  --border: 0 30% 15%;
+  --input: 0 20% 12%;
+  --ring: 0 80% 50%;
   
   --radius: 0.25rem;
 }
@@ -39,12 +42,52 @@
   body {
     @apply bg-background text-foreground antialiased overflow-hidden;
     font-family: var(--font-body);
+    background: #050000;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    @apply uppercase tracking-wider text-primary shadow-cyan-500/20 drop-shadow-lg;
+    @apply uppercase tracking-wider;
   }
+}
+
+/* Stranger Things Title Style */
+.stranger-title {
+  font-family: 'Nosifer', 'Creepster', cursive;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: flicker 3s infinite alternate;
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 
+      0 0 10px #ff0000,
+      0 0 20px #ff0000,
+      0 0 30px #ff0000,
+      0 0 40px #ff0000;
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    text-shadow: none;
+    opacity: 0.8;
+  }
+}
+
+/* Floating particle animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px);
+    opacity: 0.8;
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
 }
 
 /* Canvas Container */
@@ -56,15 +99,66 @@
 .canvas-container {
   width: 100%;
   height: 100%;
-  background: #000;
+  background: #050000;
 }
 
 /* Custom UI Effects */
 .hud-text {
   font-family: var(--font-mono);
-  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+  text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
 }
 
+/* Stranger Things Crosshair */
+.crosshair-st {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.crosshair-st::before, .crosshair-st::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 50, 50, 0.9);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px #ff0000, 0 0 15px #880000;
+}
+
+.crosshair-st::before { width: 2px; height: 20px; }
+.crosshair-st::after { width: 20px; height: 2px; }
+
+/* Upside Down Vignette Effect - Red tinted */
+.vignette-st {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: 
+    0 0 200px rgba(50, 0, 0, 0.95) inset,
+    0 0 100px rgba(100, 0, 0, 0.5) inset;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Film grain / noise overlay for horror atmosphere */
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 15;
+  mix-blend-mode: overlay;
+}
+
+/* Keep legacy crosshair for compatibility */
 .crosshair {
   position: absolute;
   top: 50%;
@@ -79,41 +173,59 @@
 .crosshair::before, .crosshair::after {
   content: '';
   position: absolute;
-  background: rgba(0, 255, 255, 0.8);
+  background: rgba(255, 50, 50, 0.8);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 4px cyan;
+  box-shadow: 0 0 4px #ff0000;
 }
 
 .crosshair::before { width: 2px; height: 16px; }
 .crosshair::after { width: 16px; height: 2px; }
 
-/* Vignette Effect */
+/* Legacy Vignette Effect */
 .vignette {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  box-shadow: 0 0 150px rgba(0,0,0,0.9) inset;
+  box-shadow: 0 0 150px rgba(50,0,0,0.9) inset;
   pointer-events: none;
   z-index: 10;
 }
 
-/* CRT Scanline Effect */
+/* CRT Scanline Effect - subtle for horror */
 .scanlines {
   background: linear-gradient(
     to bottom,
     rgba(255,255,255,0),
     rgba(255,255,255,0) 50%,
-    rgba(0,0,0,0.1) 50%,
-    rgba(0,0,0,0.1)
+    rgba(0,0,0,0.05) 50%,
+    rgba(0,0,0,0.05)
   );
   background-size: 100% 4px;
   position: absolute;
   inset: 0;
   z-index: 20;
   pointer-events: none;
-  opacity: 0.3;
+  opacity: 0.2;
+}
+
+/* Custom scrollbar for leaderboard */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(50, 0, 0, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(150, 0, 0, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(200, 0, 0, 0.7);
 }
