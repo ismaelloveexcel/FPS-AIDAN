@@ -134,7 +134,6 @@ export function PowerUpManager() {
   const isPlaying = useGameStore(state => state.isPlaying);
   const showLevelIntro = useGameStore(state => state.showLevelIntro);
   const spawnPowerUp = useGameStore(state => state.spawnPowerUp);
-  const currentLevel = useGameStore(state => state.currentLevel);
 
   // Spawn power-ups periodically
   useEffect(() => {
