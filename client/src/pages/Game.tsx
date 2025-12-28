@@ -2,7 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
 import { PointerLockControls } from '@react-three/drei';
 import { Suspense, useEffect, useRef } from 'react';
-import { useGameStore, LEVEL_CONFIG, WEAPON_STATS, POWERUP_CONFIG, Difficulty, WeaponType } from '@/game/store';
+import { useGameStore, LEVEL_CONFIG, Difficulty, WeaponType } from '@/game/store';
 import { Player } from '@/game/Player';
 import { Weapon } from '@/game/Weapon';
 import { Level } from '@/game/Level';
