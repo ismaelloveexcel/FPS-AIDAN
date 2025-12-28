@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
 import { PointerLockControls } from '@react-three/drei';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useGameStore, LEVEL_CONFIG } from '@/game/store';
 import { Player } from '@/game/Player';
 import { Weapon } from '@/game/Weapon';
@@ -10,10 +10,106 @@ import { EnemyManager } from '@/game/Enemy';
 import { BossManager } from '@/game/Boss';
 import { Button } from '@/components/ui/button';
 import { useSubmitScore, useScores } from '@/hooks/use-scores';
-import { Loader2, Trophy, Skull, Zap } from 'lucide-react';
+import { Loader2, Trophy, Skull, Zap, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+
+// Dedication screen shown before the game starts
+function DedicationScreen({ onComplete }: { onComplete: () => void }) {
+  const [isVisible, setIsVisible] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Try to play the dedication song
+    audioRef.current = new Audio('/turn-around.mp3');
+    audioRef.current.volume = 0.5;
+    audioRef.current.play().catch(() => {
+      // Audio autoplay blocked - that's ok, continue without it
+      console.log('Audio autoplay blocked by browser');
+    });
+
+    // Auto-dismiss after 6 seconds
+    const timer = setTimeout(() => {
+      setFadeOut(true);
+      setTimeout(() => {
+        setIsVisible(false);
+        onComplete();
+        // Fade out audio
+        if (audioRef.current) {
+          const fadeAudio = setInterval(() => {
+            if (audioRef.current && audioRef.current.volume > 0.1) {
+              audioRef.current.volume -= 0.1;
+            } else {
+              if (audioRef.current) {
+                audioRef.current.pause();
+              }
+              clearInterval(fadeAudio);
+            }
+          }, 200);
+        }
+      }, 1500);
+    }, 5000);
+
+    return () => {
+      clearTimeout(timer);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [onComplete]);
+
+  const handleSkip = () => {
+    setFadeOut(true);
+    setTimeout(() => {
+      setIsVisible(false);
+      onComplete();
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    }, 500);
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black transition-opacity duration-1500 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
+      onClick={handleSkip}
+    >
+      <div className="text-center space-y-8 animate-pulse">
+        <Heart className="w-16 h-16 text-red-500 mx-auto animate-bounce" />
+        <div className="space-y-4">
+          <p className="text-red-400 font-mono text-xl tracking-widest">This game is</p>
+          <h1 className="stranger-title text-5xl md:text-7xl text-red-500 drop-shadow-[0_0_30px_rgba(255,0,0,0.8)]">
+            Dedicated to
+          </h1>
+          <h2 className="stranger-title text-6xl md:text-8xl text-red-400 drop-shadow-[0_0_40px_rgba(255,100,100,0.9)] mt-4">
+            Awesome Aidan
+          </h2>
+        </div>
+        <p className="text-red-600/50 font-mono text-sm mt-12">Click anywhere to continue</p>
+      </div>
+      
+      {/* Floating particles effect */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-red-500/30 rounded-full animate-float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${3 + Math.random() * 4}s`
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Boss health bar component
 function BossHealthBar() {
@@ -319,8 +415,15 @@ function UI() {
 }
 
 export default function Game() {
+  const [showDedication, setShowDedication] = useState(true);
+
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
+      {/* Dedication Screen */}
+      {showDedication && (
+        <DedicationScreen onComplete={() => setShowDedication(false)} />
+      )}
+      
       <Canvas shadows camera={{ fov: 75 }}>
         <Suspense fallback={null}>
           {/* Dark, ominous sky - no stars, just darkness */}
