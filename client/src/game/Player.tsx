@@ -1,14 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { useSphere } from '@react-three/cannon';
 import { useThree, useFrame } from '@react-three/fiber';
-import { Vector3 } from 'three';
+import { Vector3, SpotLight } from 'three';
 import { useGameStore } from './store';
 
-const SPEED = 5;
+const BASE_SPEED = 5;
 const JUMP_FORCE = 4;
 
 export function Player() {
   const { camera } = useThree();
+  const speedMultiplier = useGameStore(state => state.speedMultiplier);
+  const flashlightOn = useGameStore(state => state.flashlightOn);
+  const toggleFlashlight = useGameStore(state => state.toggleFlashlight);
+  const drainFlashlightBattery = useGameStore(state => state.drainFlashlightBattery);
+  const updateActiveEffects = useGameStore(state => state.updateActiveEffects);
+  const isPlaying = useGameStore(state => state.isPlaying);
+  
   const [ref, api] = useSphere(() => ({ 
     mass: 1, 
     type: 'Dynamic', 
@@ -32,6 +39,7 @@ export function Player() {
         case 'KeyA': keys.current.a = true; break;
         case 'KeyD': keys.current.d = true; break;
         case 'Space': keys.current.space = true; break;
+        case 'KeyF': toggleFlashlight(); break; // Toggle flashlight
       }
     };
     
@@ -51,25 +59,31 @@ export function Player() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [toggleFlashlight]);
 
-  useFrame(() => {
+  useFrame((state, delta) => {
     if (!ref.current) return;
 
-    // Sync camera to physics body
-    const pos = ref.current.position; // Actually a Vector3 in R3F context usually, but with cannon hooks we need api.position for reading usually, but ref works for connecting
-    
+    // Update active power-up effects
+    if (isPlaying) {
+      updateActiveEffects();
+    }
+
+    // Drain flashlight battery when on
+    if (flashlightOn && isPlaying) {
+      drainFlashlightBattery(delta * 2); // Drain 2% per second
+    }
+
     // Manual camera sync
-    // We subscribe to position changes via api.position if we needed exact coords, 
-    // but cleaner is to let the camera follow the mesh ref via logic
-    // However, @react-three/cannon refs are tricky. 
-    // Best practice: copy ref position to camera
     camera.position.copy(new Vector3(
       // @ts-ignore - position exists on the ref in R3F contexts mostly
       ref.current.position.x, 
       ref.current.position.y + 0.5, // Eye level offset
       ref.current.position.z
     ));
+
+    // Calculate speed with power-up multiplier
+    const currentSpeed = BASE_SPEED * speedMultiplier;
 
     // Movement Logic
     const direction = new Vector3();
@@ -87,7 +101,7 @@ export function Player() {
     direction
       .subVectors(frontVector, sideVector)
       .normalize()
-      .multiplyScalar(SPEED)
+      .multiplyScalar(currentSpeed)
       .applyEuler(camera.rotation);
 
     api.velocity.set(direction.x, velocity.current[1], direction.z);
@@ -99,10 +113,30 @@ export function Player() {
   });
 
   return (
-    <mesh ref={ref as any}>
-      {/* Invisible collider mesh for player */}
-      <sphereGeometry args={[0.5]} />
-      <meshBasicMaterial visible={false} />
-    </mesh>
+    <>
+      <mesh ref={ref as any}>
+        {/* Invisible collider mesh for player */}
+        <sphereGeometry args={[0.5]} />
+        <meshBasicMaterial visible={false} />
+      </mesh>
+      
+      {/* Flashlight */}
+      {flashlightOn && (
+        <spotLight
+          position={camera.position.toArray()}
+          target-position={[
+            camera.position.x + Math.sin(camera.rotation.y) * -10,
+            camera.position.y,
+            camera.position.z + Math.cos(camera.rotation.y) * -10
+          ]}
+          angle={0.4}
+          penumbra={0.5}
+          intensity={2}
+          distance={30}
+          color="#ffffaa"
+          castShadow
+        />
+      )}
+    </>
   );
 }

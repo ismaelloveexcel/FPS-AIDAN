@@ -3,6 +3,9 @@ import { create } from 'zustand';
 // Boss types for each level
 export type BossType = 'demogorgon' | 'mindflayer' | 'vecna';
 export type BossPhase = 1 | 2 | 3;
+export type WeaponType = 'pistol' | 'nailbat' | 'flamethrower';
+export type PowerUpType = 'eggo' | 'skateboard' | 'shield';
+export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface Boss {
   id: string;
@@ -12,7 +15,37 @@ export interface Boss {
   position: [number, number, number];
   phase: BossPhase;
   isInvulnerable: boolean;
+  isTeleporting?: boolean;
+  hasVines?: boolean;
+  clockCurseActive?: boolean;
 }
+
+export interface PowerUp {
+  id: string;
+  type: PowerUpType;
+  position: [number, number, number];
+}
+
+// Difficulty multipliers
+export const DIFFICULTY_CONFIG = {
+  easy: { damageMultiplier: 0.5, enemySpeedMultiplier: 0.7, bossHealthMultiplier: 0.6 },
+  normal: { damageMultiplier: 1, enemySpeedMultiplier: 1, bossHealthMultiplier: 1 },
+  hard: { damageMultiplier: 1.5, enemySpeedMultiplier: 1.3, bossHealthMultiplier: 1.5 },
+};
+
+// Weapon stats
+export const WEAPON_STATS = {
+  pistol: { damage: 50, range: 100, fireRate: 300, ammo: Infinity, name: 'Pistol' },
+  nailbat: { damage: 150, range: 3, fireRate: 500, ammo: Infinity, name: "Steve's Nail Bat" },
+  flamethrower: { damage: 30, range: 15, fireRate: 50, ammo: 100, name: 'Flamethrower' },
+};
+
+// Power-up effects
+export const POWERUP_CONFIG = {
+  eggo: { healthRestore: 30, duration: 0, name: "Eleven's Eggo" },
+  skateboard: { speedBoost: 1.5, duration: 10000, name: "Max's Skateboard" },
+  shield: { shieldAmount: 50, duration: 8000, name: "Eleven's Shield" },
+};
 
 // Enemy stats per level (from your proposal)
 export const ENEMY_STATS = {
@@ -29,7 +62,8 @@ export const LEVEL_CONFIG = {
     name: 'THE UPSIDE DOWN',
     subtitle: 'Defeat the Demogorgon',
     storyText: 'The gate has opened. The Demogorgon hunts...',
-    victoryText: 'The Demogorgon falls, but the gate widens...'
+    victoryText: 'The Demogorgon falls, but the gate widens...',
+    unlockedWeapon: 'pistol' as WeaponType
   },
   2: { 
     boss: 'mindflayer' as BossType, 
@@ -37,7 +71,8 @@ export const LEVEL_CONFIG = {
     name: 'THE SHADOW REALM',
     subtitle: 'Destroy the Mind Flayer',
     storyText: 'Storm clouds gather. The Mind Flayer approaches...',
-    victoryText: 'The shadow recedes, but a darker evil awaits...'
+    victoryText: 'The shadow recedes, but a darker evil awaits...',
+    unlockedWeapon: 'nailbat' as WeaponType
   },
   3: { 
     boss: 'vecna' as BossType, 
@@ -45,13 +80,15 @@ export const LEVEL_CONFIG = {
     name: 'VECNA\'S LAIR',
     subtitle: 'End Vecna\'s Terror',
     storyText: 'The clock chimes. Vecna\'s curse begins...',
-    victoryText: 'Vecna is defeated! Hawkins is saved!'
+    victoryText: 'Vecna is defeated! Hawkins is saved!',
+    unlockedWeapon: 'flamethrower' as WeaponType
   },
 };
 
 interface GameState {
   score: number;
   health: number;
+  shield: number;
   isGameOver: boolean;
   isVictory: boolean;
   isPlaying: boolean;
@@ -60,14 +97,34 @@ interface GameState {
   enemies: Array<{ id: string; position: [number, number, number]; health: number }>;
   showLevelIntro: boolean;
   showLevelComplete: boolean;
+  showVictoryCutscene: boolean;
+  
+  // Difficulty
+  difficulty: Difficulty;
+  
+  // Weapons
+  currentWeapon: WeaponType;
+  unlockedWeapons: WeaponType[];
+  flamethrowerAmmo: number;
+  
+  // Power-ups
+  powerUps: PowerUp[];
+  activeEffects: { type: PowerUpType; expiresAt: number }[];
+  speedMultiplier: number;
+  
+  // Flashlight
+  flashlightOn: boolean;
+  flashlightBattery: number;
   
   // Stats tracking
   enemiesKilled: number;
   shotsFired: number;
   shotsHit: number;
   levelStartTime: number;
+  totalPlayTime: number;
   
   // Actions
+  setDifficulty: (difficulty: Difficulty) => void;
   addScore: (points: number) => void;
   takeDamage: (amount: number) => void;
   startGame: () => void;
@@ -82,11 +139,26 @@ interface GameState {
   dismissLevelIntro: () => void;
   dismissLevelComplete: () => void;
   recordShot: (hit: boolean) => void;
+  
+  // New actions
+  switchWeapon: (weapon: WeaponType) => void;
+  useFlamethrowerAmmo: (amount: number) => void;
+  spawnPowerUp: (type: PowerUpType, position: [number, number, number]) => void;
+  collectPowerUp: (id: string) => void;
+  toggleFlashlight: () => void;
+  drainFlashlightBattery: (amount: number) => void;
+  updateActiveEffects: () => void;
+  dismissVictoryCutscene: () => void;
+  setBossPhase: (phase: BossPhase) => void;
+  setBossTeleporting: (isTeleporting: boolean) => void;
+  activateClockCurse: () => void;
+  spawnVines: () => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
   score: 0,
   health: 100,
+  shield: 0,
   isGameOver: false,
   isVictory: false,
   isPlaying: false,
@@ -95,55 +167,121 @@ export const useGameStore = create<GameState>((set, get) => ({
   enemies: [],
   showLevelIntro: false,
   showLevelComplete: false,
+  showVictoryCutscene: false,
+  
+  // Difficulty
+  difficulty: 'normal',
+  
+  // Weapons
+  currentWeapon: 'pistol',
+  unlockedWeapons: ['pistol'],
+  flamethrowerAmmo: 100,
+  
+  // Power-ups
+  powerUps: [],
+  activeEffects: [],
+  speedMultiplier: 1,
+  
+  // Flashlight
+  flashlightOn: false,
+  flashlightBattery: 100,
   
   // Stats
   enemiesKilled: 0,
   shotsFired: 0,
   shotsHit: 0,
   levelStartTime: 0,
+  totalPlayTime: 0,
+
+  setDifficulty: (difficulty) => set({ difficulty }),
 
   addScore: (points) => set((state) => ({ score: state.score + points })),
+  
   takeDamage: (amount) => set((state) => {
-    const newHealth = Math.max(0, state.health - amount);
+    const diffConfig = DIFFICULTY_CONFIG[state.difficulty];
+    const actualDamage = Math.round(amount * diffConfig.damageMultiplier);
+    
+    // Shield absorbs damage first
+    let remainingDamage = actualDamage;
+    let newShield = state.shield;
+    
+    if (state.shield > 0) {
+      if (state.shield >= remainingDamage) {
+        newShield = state.shield - remainingDamage;
+        remainingDamage = 0;
+      } else {
+        remainingDamage -= state.shield;
+        newShield = 0;
+      }
+    }
+    
+    const newHealth = Math.max(0, state.health - remainingDamage);
     return { 
       health: newHealth,
+      shield: newShield,
       isGameOver: newHealth <= 0 
     };
   }),
+  
   startGame: () => {
+    const { difficulty } = get();
     set({ 
       isPlaying: true, 
       isGameOver: false, 
       isVictory: false,
       score: 0, 
-      health: 100, 
+      health: 100,
+      shield: 0,
       enemies: [],
       currentLevel: 1,
       boss: null,
       showLevelIntro: true,
       showLevelComplete: false,
+      showVictoryCutscene: false,
       enemiesKilled: 0,
       shotsFired: 0,
       shotsHit: 0,
-      levelStartTime: Date.now()
+      levelStartTime: Date.now(),
+      totalPlayTime: 0,
+      currentWeapon: 'pistol',
+      unlockedWeapons: ['pistol'],
+      flamethrowerAmmo: 100,
+      powerUps: [],
+      activeEffects: [],
+      speedMultiplier: 1,
+      flashlightOn: false,
+      flashlightBattery: 100
     });
   },
+  
   endGame: () => set({ isPlaying: false, isGameOver: true }),
+  
   resetGame: () => set({ 
     isPlaying: false, 
     isGameOver: false, 
     isVictory: false,
     score: 0, 
-    health: 100, 
+    health: 100,
+    shield: 0,
     enemies: [],
     currentLevel: 1,
     boss: null,
     showLevelIntro: false,
     showLevelComplete: false,
+    showVictoryCutscene: false,
     enemiesKilled: 0,
     shotsFired: 0,
     shotsHit: 0,
-    levelStartTime: 0
+    levelStartTime: 0,
+    totalPlayTime: 0,
+    currentWeapon: 'pistol',
+    unlockedWeapons: ['pistol'],
+    flamethrowerAmmo: 100,
+    powerUps: [],
+    activeEffects: [],
+    speedMultiplier: 1,
+    flashlightOn: false,
+    flashlightBattery: 100
   }),
   
   spawnEnemy: (id, position) => set((state) => {
@@ -181,17 +319,23 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
 
   spawnBoss: () => {
-    const { currentLevel } = get();
+    const { currentLevel, difficulty } = get();
     const config = LEVEL_CONFIG[currentLevel];
+    const diffConfig = DIFFICULTY_CONFIG[difficulty];
+    const bossHealth = Math.round(config.bossHealth * diffConfig.bossHealthMultiplier);
+    
     set({
       boss: {
         id: `boss-${currentLevel}`,
         type: config.boss,
-        health: config.bossHealth,
-        maxHealth: config.bossHealth,
+        health: bossHealth,
+        maxHealth: bossHealth,
         position: [0, 3, -15],
         phase: 1,
-        isInvulnerable: false
+        isInvulnerable: false,
+        isTeleporting: false,
+        hasVines: false,
+        clockCurseActive: false
       },
       levelStartTime: Date.now()
     });
@@ -209,22 +353,31 @@ export const useGameStore = create<GameState>((set, get) => ({
     else if (healthPercent <= 0.66) newPhase = 2;
     
     if (newHealth <= 0) {
-      // Boss defeated - show level complete screen
+      // Boss defeated
       const newScore = state.score + (state.currentLevel * 1000);
+      const newUnlockedWeapons = [...state.unlockedWeapons];
+      
+      // Unlock new weapon for next level
+      if (state.currentLevel === 1 && !newUnlockedWeapons.includes('nailbat')) {
+        newUnlockedWeapons.push('nailbat');
+      } else if (state.currentLevel === 2 && !newUnlockedWeapons.includes('flamethrower')) {
+        newUnlockedWeapons.push('flamethrower');
+      }
       
       if (state.currentLevel === 3) {
-        // Game complete!
+        // Game complete! Show victory cutscene
         return {
           boss: null,
           score: newScore,
-          isVictory: true,
-          isPlaying: false
+          unlockedWeapons: newUnlockedWeapons,
+          showVictoryCutscene: true
         };
       } else {
         // Show level complete before advancing
         return {
           boss: null,
           score: newScore,
+          unlockedWeapons: newUnlockedWeapons,
           showLevelComplete: true
         };
       }
@@ -245,7 +398,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         showLevelIntro: true,
         showLevelComplete: false,
         health: Math.min(100, state.health + 25), // Restore some health
-        levelStartTime: Date.now()
+        levelStartTime: Date.now(),
+        powerUps: [],
+        activeEffects: [],
+        speedMultiplier: 1
       }));
     }
   },
@@ -262,5 +418,108 @@ export const useGameStore = create<GameState>((set, get) => ({
   recordShot: (hit) => set((state) => ({
     shotsFired: state.shotsFired + 1,
     shotsHit: hit ? state.shotsHit + 1 : state.shotsHit
-  }))
+  })),
+
+  // New weapon actions
+  switchWeapon: (weapon) => set((state) => {
+    if (state.unlockedWeapons.includes(weapon)) {
+      return { currentWeapon: weapon };
+    }
+    return state;
+  }),
+
+  useFlamethrowerAmmo: (amount) => set((state) => ({
+    flamethrowerAmmo: Math.max(0, state.flamethrowerAmmo - amount)
+  })),
+
+  // Power-up actions
+  spawnPowerUp: (type, position) => set((state) => ({
+    powerUps: [...state.powerUps, { id: `powerup-${Date.now()}`, type, position }]
+  })),
+
+  collectPowerUp: (id) => set((state) => {
+    const powerUp = state.powerUps.find(p => p.id === id);
+    if (!powerUp) return state;
+
+    let updates: Partial<GameState> = {
+      powerUps: state.powerUps.filter(p => p.id !== id)
+    };
+
+    switch (powerUp.type) {
+      case 'eggo':
+        updates.health = Math.min(100, state.health + POWERUP_CONFIG.eggo.healthRestore);
+        break;
+      case 'skateboard':
+        updates.speedMultiplier = POWERUP_CONFIG.skateboard.speedBoost;
+        updates.activeEffects = [...state.activeEffects, { 
+          type: 'skateboard', 
+          expiresAt: Date.now() + POWERUP_CONFIG.skateboard.duration 
+        }];
+        break;
+      case 'shield':
+        updates.shield = Math.min(100, state.shield + POWERUP_CONFIG.shield.shieldAmount);
+        updates.activeEffects = [...state.activeEffects, { 
+          type: 'shield', 
+          expiresAt: Date.now() + POWERUP_CONFIG.shield.duration 
+        }];
+        break;
+    }
+
+    return updates as GameState;
+  }),
+
+  // Flashlight
+  toggleFlashlight: () => set((state) => ({ 
+    flashlightOn: state.flashlightBattery > 0 ? !state.flashlightOn : false 
+  })),
+
+  drainFlashlightBattery: (amount) => set((state) => {
+    const newBattery = Math.max(0, state.flashlightBattery - amount);
+    return { 
+      flashlightBattery: newBattery,
+      flashlightOn: newBattery > 0 ? state.flashlightOn : false
+    };
+  }),
+
+  // Update active effects (call on each frame)
+  updateActiveEffects: () => set((state) => {
+    const now = Date.now();
+    const activeEffects = state.activeEffects.filter(e => e.expiresAt > now);
+    
+    // Reset speed if skateboard expired
+    const hasSpeedBoost = activeEffects.some(e => e.type === 'skateboard');
+    
+    return {
+      activeEffects,
+      speedMultiplier: hasSpeedBoost ? POWERUP_CONFIG.skateboard.speedBoost : 1
+    };
+  }),
+
+  // Victory cutscene
+  dismissVictoryCutscene: () => set({ 
+    showVictoryCutscene: false, 
+    isVictory: true, 
+    isPlaying: false 
+  }),
+
+  // Vecna boss mechanics
+  setBossPhase: (phase) => set((state) => {
+    if (!state.boss) return state;
+    return { boss: { ...state.boss, phase } };
+  }),
+
+  setBossTeleporting: (isTeleporting) => set((state) => {
+    if (!state.boss) return state;
+    return { boss: { ...state.boss, isTeleporting, isInvulnerable: isTeleporting } };
+  }),
+
+  activateClockCurse: () => set((state) => {
+    if (!state.boss || state.boss.type !== 'vecna') return state;
+    return { boss: { ...state.boss, clockCurseActive: true } };
+  }),
+
+  spawnVines: () => set((state) => {
+    if (!state.boss || state.boss.type !== 'vecna') return state;
+    return { boss: { ...state.boss, hasVines: true } };
+  })
 }));

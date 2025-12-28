@@ -2,15 +2,16 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
 import { PointerLockControls } from '@react-three/drei';
 import { Suspense, useEffect, useRef } from 'react';
-import { useGameStore, LEVEL_CONFIG } from '@/game/store';
+import { useGameStore, LEVEL_CONFIG, WEAPON_STATS, POWERUP_CONFIG, Difficulty, WeaponType } from '@/game/store';
 import { Player } from '@/game/Player';
 import { Weapon } from '@/game/Weapon';
 import { Level } from '@/game/Level';
 import { EnemyManager } from '@/game/Enemy';
 import { BossManager } from '@/game/Boss';
+import { PowerUpManager } from '@/game/PowerUp';
 import { Button } from '@/components/ui/button';
 import { useSubmitScore, useScores } from '@/hooks/use-scores';
-import { Loader2, Trophy, Skull, Zap, Heart } from 'lucide-react';
+import { Loader2, Trophy, Skull, Zap, Heart, Shield, Flame, Crosshair, Flashlight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -262,8 +263,279 @@ function LevelComplete() {
   );
 }
 
+// Victory Cutscene
+function VictoryCutscene() {
+  const showVictoryCutscene = useGameStore(state => state.showVictoryCutscene);
+  const dismissVictoryCutscene = useGameStore(state => state.dismissVictoryCutscene);
+  const score = useGameStore(state => state.score);
+  const enemiesKilled = useGameStore(state => state.enemiesKilled);
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    if (showVictoryCutscene) {
+      const timers = [
+        setTimeout(() => setPhase(1), 1000),
+        setTimeout(() => setPhase(2), 3000),
+        setTimeout(() => setPhase(3), 5000),
+      ];
+      return () => timers.forEach(clearTimeout);
+    }
+  }, [showVictoryCutscene]);
+
+  if (!showVictoryCutscene) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black z-[60] pointer-events-auto">
+      <div className="text-center space-y-8">
+        {phase >= 0 && (
+          <div className={`transition-opacity duration-1000 ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+            <p className="text-green-400 font-mono text-2xl tracking-widest mb-4">VECNA HAS BEEN DESTROYED</p>
+          </div>
+        )}
+        
+        {phase >= 1 && (
+          <div className={`transition-opacity duration-1000 ${phase >= 2 ? 'opacity-100' : 'opacity-0'}`}>
+            <h1 className="stranger-title text-6xl md:text-8xl text-red-500 drop-shadow-[0_0_50px_rgba(255,0,0,1)]">
+              HAWKINS IS SAVED
+            </h1>
+          </div>
+        )}
+        
+        {phase >= 2 && (
+          <div className={`transition-opacity duration-1000 ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+            <p className="text-red-300 text-xl font-mono">The gate is closed. The nightmare ends.</p>
+            <div className="mt-8 space-y-2 text-red-400 font-mono">
+              <p>Final Score: <span className="text-yellow-400 font-bold">{score}</span></p>
+              <p>Enemies Defeated: <span className="text-white">{enemiesKilled}</span></p>
+            </div>
+          </div>
+        )}
+        
+        {phase >= 3 && (
+          <Button 
+            onClick={dismissVictoryCutscene}
+            className="mt-12 px-12 py-6 text-xl bg-green-900 hover:bg-green-800 border-2 border-green-600"
+          >
+            <Trophy className="mr-2" /> VIEW LEADERBOARD
+          </Button>
+        )}
+      </div>
+      
+      {/* Celebration particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(30)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-3 h-3 rounded-full animate-float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              backgroundColor: ['#ff0000', '#00ff00', '#ffff00', '#ff00ff'][i % 4],
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${2 + Math.random() * 3}s`,
+              opacity: 0.6
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Weapon HUD
+function WeaponHUD() {
+  const currentWeapon = useGameStore(state => state.currentWeapon);
+  const unlockedWeapons = useGameStore(state => state.unlockedWeapons);
+  const flamethrowerAmmo = useGameStore(state => state.flamethrowerAmmo);
+  const isPlaying = useGameStore(state => state.isPlaying);
+  const showLevelIntro = useGameStore(state => state.showLevelIntro);
+
+  if (!isPlaying || showLevelIntro) return null;
+
+  const weaponIcons: Record<WeaponType, string> = {
+    pistol: '🔫',
+    nailbat: '🏏',
+    flamethrower: '🔥'
+  };
+
+  return (
+    <div className="absolute bottom-6 left-6 z-30 pointer-events-none">
+      <div className="bg-black/70 border border-red-900/50 rounded-lg p-3 space-y-2">
+        <div className="text-red-400 font-mono text-xs tracking-wider mb-2">WEAPONS [1-3]</div>
+        <div className="flex gap-2">
+          {(['pistol', 'nailbat', 'flamethrower'] as WeaponType[]).map((weapon, i) => {
+            const isUnlocked = unlockedWeapons.includes(weapon);
+            const isActive = currentWeapon === weapon;
+            return (
+              <div 
+                key={weapon}
+                className={`w-14 h-14 flex flex-col items-center justify-center rounded border-2 text-xl
+                  ${isActive ? 'border-red-500 bg-red-900/50' : 'border-red-900/30 bg-black/50'}
+                  ${!isUnlocked ? 'opacity-30' : ''}`}
+              >
+                <span>{weaponIcons[weapon]}</span>
+                <span className="text-[10px] text-red-300 font-mono">{i + 1}</span>
+              </div>
+            );
+          })}
+        </div>
+        {currentWeapon === 'flamethrower' && (
+          <div className="text-xs font-mono text-orange-400">
+            FUEL: {flamethrowerAmmo}%
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Power-up Effects HUD
+function PowerUpHUD() {
+  const activeEffects = useGameStore(state => state.activeEffects);
+  const shield = useGameStore(state => state.shield);
+  const speedMultiplier = useGameStore(state => state.speedMultiplier);
+  const flashlightBattery = useGameStore(state => state.flashlightBattery);
+  const flashlightOn = useGameStore(state => state.flashlightOn);
+  const isPlaying = useGameStore(state => state.isPlaying);
+
+  if (!isPlaying) return null;
+
+  return (
+    <div className="absolute top-20 right-6 z-30 pointer-events-none space-y-2">
+      {shield > 0 && (
+        <div className="flex items-center gap-2 bg-purple-900/50 border border-purple-500 rounded px-3 py-1">
+          <Shield className="w-4 h-4 text-purple-400" />
+          <span className="text-purple-300 font-mono text-sm">{shield}%</span>
+        </div>
+      )}
+      
+      {speedMultiplier > 1 && (
+        <div className="flex items-center gap-2 bg-pink-900/50 border border-pink-500 rounded px-3 py-1">
+          <Zap className="w-4 h-4 text-pink-400" />
+          <span className="text-pink-300 font-mono text-sm">SPEED BOOST</span>
+        </div>
+      )}
+      
+      <div className="flex items-center gap-2 bg-yellow-900/50 border border-yellow-700 rounded px-3 py-1">
+        <Flashlight className={`w-4 h-4 ${flashlightOn ? 'text-yellow-400' : 'text-yellow-800'}`} />
+        <span className="text-yellow-300 font-mono text-sm">{Math.round(flashlightBattery)}% [F]</span>
+      </div>
+    </div>
+  );
+}
+
+// Mini-map
+function MiniMap() {
+  const enemies = useGameStore(state => state.enemies);
+  const boss = useGameStore(state => state.boss);
+  const isPlaying = useGameStore(state => state.isPlaying);
+  const showLevelIntro = useGameStore(state => state.showLevelIntro);
+
+  if (!isPlaying || showLevelIntro) return null;
+
+  const mapSize = 120;
+  const scale = 3; // World units to pixels
+
+  return (
+    <div className="absolute bottom-6 right-6 z-30 pointer-events-none">
+      <div 
+        className="bg-black/70 border-2 border-red-900/50 rounded-lg overflow-hidden"
+        style={{ width: mapSize, height: mapSize }}
+      >
+        <div className="relative w-full h-full">
+          {/* Player at center */}
+          <div 
+            className="absolute w-3 h-3 bg-green-500 rounded-full border border-white"
+            style={{ 
+              left: mapSize / 2 - 6, 
+              top: mapSize / 2 - 6,
+              boxShadow: '0 0 6px #00ff00'
+            }}
+          />
+          
+          {/* Enemies */}
+          {enemies.map((enemy) => {
+            const x = mapSize / 2 + enemy.position[0] * scale;
+            const z = mapSize / 2 + enemy.position[2] * scale;
+            if (x < 0 || x > mapSize || z < 0 || z > mapSize) return null;
+            return (
+              <div 
+                key={enemy.id}
+                className="absolute w-2 h-2 bg-red-500 rounded-full"
+                style={{ left: x - 4, top: z - 4 }}
+              />
+            );
+          })}
+          
+          {/* Boss */}
+          {boss && (
+            <div 
+              className="absolute w-4 h-4 bg-purple-500 rounded-full animate-pulse"
+              style={{ 
+                left: mapSize / 2 + boss.position[0] * scale - 8, 
+                top: mapSize / 2 + boss.position[2] * scale - 8,
+                boxShadow: '0 0 8px #8800ff'
+              }}
+            />
+          )}
+          
+          {/* Grid lines */}
+          <div className="absolute inset-0 grid grid-cols-4 grid-rows-4 opacity-20">
+            {[...Array(16)].map((_, i) => (
+              <div key={i} className="border border-red-500/30" />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="text-center text-red-500/50 font-mono text-[10px] mt-1">RADAR</div>
+    </div>
+  );
+}
+
+// Difficulty Selector
+function DifficultySelector({ onSelect }: { onSelect: () => void }) {
+  const setDifficulty = useGameStore(state => state.setDifficulty);
+  const difficulty = useGameStore(state => state.difficulty);
+
+  const difficulties: { value: Difficulty; label: string; desc: string; color: string }[] = [
+    { value: 'easy', label: 'EASY', desc: 'For casual adventurers', color: 'green' },
+    { value: 'normal', label: 'NORMAL', desc: 'The true experience', color: 'yellow' },
+    { value: 'hard', label: 'HARD', desc: 'Vecna awaits the brave', color: 'red' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-red-400 font-mono text-sm text-center mb-4">SELECT DIFFICULTY</p>
+      <div className="flex gap-2">
+        {difficulties.map((d) => (
+          <button
+            key={d.value}
+            onClick={() => setDifficulty(d.value)}
+            className={`flex-1 py-3 px-4 rounded border-2 transition-all font-mono text-sm
+              ${difficulty === d.value 
+                ? `border-${d.color}-500 bg-${d.color}-900/50 text-${d.color}-300` 
+                : 'border-red-900/30 bg-black/30 text-red-600 hover:border-red-700'}`}
+            style={{
+              borderColor: difficulty === d.value ? 
+                (d.color === 'green' ? '#22c55e' : d.color === 'yellow' ? '#eab308' : '#ef4444') : undefined,
+              backgroundColor: difficulty === d.value ?
+                (d.color === 'green' ? 'rgba(34,197,94,0.3)' : d.color === 'yellow' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)') : undefined
+            }}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-red-500/60 text-xs text-center font-mono">
+        {difficulties.find(d => d.value === difficulty)?.desc}
+      </p>
+    </div>
+  );
+}
+
 function UI() {
   const { score, health, isGameOver, isVictory, isPlaying, startGame, resetGame, currentLevel } = useGameStore();
+  const shield = useGameStore(state => state.shield);
   const { mutate: submitScore, isPending } = useSubmitScore();
   const [username, setUsername] = useState("");
   const { toast } = useToast();
@@ -305,12 +577,25 @@ function UI() {
           <div className="hud-text text-2xl font-bold text-red-400 drop-shadow-[0_0_10px_rgba(255,0,0,0.5)]">
             HEALTH: {health}%
           </div>
-          <div className="w-48 h-4 bg-black/50 border border-red-900">
+          <div className="w-48 h-4 bg-black/50 border border-red-900 relative overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300" 
               style={{ width: `${health}%` }}
             />
           </div>
+          {shield > 0 && (
+            <>
+              <div className="hud-text text-lg text-purple-400">
+                SHIELD: {shield}%
+              </div>
+              <div className="w-48 h-3 bg-black/50 border border-purple-900">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-800 to-purple-500 transition-all duration-300" 
+                  style={{ width: `${shield}%` }}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -319,6 +604,15 @@ function UI() {
       <div className="vignette-st" />
       <div className="noise-overlay" />
 
+      {/* Weapon HUD */}
+      <WeaponHUD />
+      
+      {/* Power-up HUD */}
+      <PowerUpHUD />
+      
+      {/* Mini-map */}
+      <MiniMap />
+
       {/* Boss health bar */}
       <BossHealthBar />
 
@@ -326,6 +620,10 @@ function UI() {
       <LevelIntro />
 
       {/* Level complete */}
+      <LevelComplete />
+      
+      {/* Victory cutscene */}
+      <VictoryCutscene />
       <LevelComplete />
 
       {/* Start/Game Over/Victory Overlay */}
@@ -374,12 +672,20 @@ function UI() {
                   </div>
                 ) : (
                   <div className="space-y-6 text-center">
-                    <div className="text-red-300/70 font-mono text-sm space-y-2 border border-red-900/30 p-4 bg-black/30 rounded">
-                      <p className="text-red-400 font-bold mb-3">CONTROLS</p>
-                      <p>WASD - Move</p>
-                      <p>SPACE - Jump</p>
-                      <p>MOUSE - Look & Shoot</p>
-                      <p className="mt-4 text-red-500">Defeat all three bosses to save Hawkins!</p>
+                    {/* Difficulty Selector */}
+                    <DifficultySelector onSelect={() => {}} />
+                    
+                    <div className="text-red-300/70 font-mono text-xs space-y-1 border border-red-900/30 p-4 bg-black/30 rounded">
+                      <p className="text-red-400 font-bold mb-2">CONTROLS</p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-left">
+                        <p>WASD - Move</p>
+                        <p>1/2/3 - Switch Weapon</p>
+                        <p>SPACE - Jump</p>
+                        <p>F - Flashlight</p>
+                        <p>MOUSE - Look</p>
+                        <p>CLICK - Attack</p>
+                      </div>
+                      <p className="mt-3 text-red-500">Defeat all three bosses to save Hawkins!</p>
                     </div>
                     <Button 
                       onClick={handleStart}
@@ -440,6 +746,7 @@ export default function Game() {
             <Weapon />
             <EnemyManager />
             <BossManager />
+            <PowerUpManager />
             <Level />
           </Physics>
           <PointerLockControls />
