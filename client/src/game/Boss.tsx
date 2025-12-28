@@ -332,8 +332,9 @@ export function BossManager() {
   const boss = useGameStore(state => state.boss);
   const isPlaying = useGameStore(state => state.isPlaying);
   const showLevelIntro = useGameStore(state => state.showLevelIntro);
+  const showLevelComplete = useGameStore(state => state.showLevelComplete);
 
-  if (!isPlaying || !boss || showLevelIntro) return null;
+  if (!isPlaying || !boss || showLevelIntro || showLevelComplete) return null;
 
   return <BossEnemy {...boss} />;
 }

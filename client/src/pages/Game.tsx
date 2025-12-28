@@ -61,13 +61,16 @@ function LevelIntro() {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/90 pointer-events-auto z-50">
-      <div className="text-center space-y-8 animate-pulse">
+      <div className="text-center space-y-8">
         <div className="text-red-600 font-mono text-xl tracking-widest">LEVEL {currentLevel}</div>
-        <h1 className="stranger-title text-6xl md:text-8xl text-red-500 drop-shadow-[0_0_30px_rgba(255,0,0,0.8)]">
+        <h1 className="stranger-title text-6xl md:text-8xl text-red-500 drop-shadow-[0_0_30px_rgba(255,0,0,0.8)] animate-pulse">
           {config.name}
         </h1>
         <p className="text-red-300 text-2xl font-mono tracking-wider">
           {config.subtitle}
+        </p>
+        <p className="text-red-400/70 text-lg font-mono italic max-w-md mx-auto">
+          "{config.storyText}"
         </p>
         <Button 
           onClick={dismissLevelIntro}
@@ -76,6 +79,81 @@ function LevelIntro() {
                      transition-all duration-300"
         >
           <Zap className="mr-2" /> ENTER THE UPSIDE DOWN
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Level complete overlay with stats
+function LevelComplete() {
+  const showLevelComplete = useGameStore(state => state.showLevelComplete);
+  const currentLevel = useGameStore(state => state.currentLevel);
+  const dismissLevelComplete = useGameStore(state => state.dismissLevelComplete);
+  const enemiesKilled = useGameStore(state => state.enemiesKilled);
+  const shotsFired = useGameStore(state => state.shotsFired);
+  const shotsHit = useGameStore(state => state.shotsHit);
+  const levelStartTime = useGameStore(state => state.levelStartTime);
+  const score = useGameStore(state => state.score);
+  
+  if (!showLevelComplete) return null;
+  
+  // Calculate stats
+  const accuracy = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
+  const timeTaken = Math.round((Date.now() - levelStartTime) / 1000);
+  const minutes = Math.floor(timeTaken / 60);
+  const seconds = timeTaken % 60;
+  
+  const prevLevelConfig = LEVEL_CONFIG[currentLevel as 1 | 2 | 3];
+  const nextLevel = (currentLevel + 1) as 2 | 3;
+  const nextLevelConfig = currentLevel < 3 ? LEVEL_CONFIG[nextLevel] : null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/90 pointer-events-auto z-50">
+      <div className="text-center space-y-6 max-w-lg">
+        <div className="text-green-500 font-mono text-2xl tracking-widest">LEVEL {currentLevel} COMPLETE</div>
+        <h1 className="stranger-title text-5xl text-red-500 drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+          {prevLevelConfig.name}
+        </h1>
+        
+        {/* Stats */}
+        <div className="bg-black/50 border border-red-900/50 rounded-lg p-6 space-y-3">
+          <div className="flex justify-between text-red-300 font-mono">
+            <span>Enemies Killed:</span>
+            <span className="text-white">{enemiesKilled}</span>
+          </div>
+          <div className="flex justify-between text-red-300 font-mono">
+            <span>Accuracy:</span>
+            <span className="text-white">{accuracy}%</span>
+          </div>
+          <div className="flex justify-between text-red-300 font-mono">
+            <span>Time:</span>
+            <span className="text-white">{minutes}:{seconds.toString().padStart(2, '0')}</span>
+          </div>
+          <div className="flex justify-between text-red-300 font-mono border-t border-red-900/30 pt-3">
+            <span>Score:</span>
+            <span className="text-yellow-400 font-bold">{score}</span>
+          </div>
+        </div>
+
+        {/* Story transition */}
+        <p className="text-red-400/70 text-lg font-mono italic">
+          "{prevLevelConfig.victoryText}"
+        </p>
+
+        {nextLevelConfig && (
+          <p className="text-purple-400 text-xl font-mono">
+            Next: {nextLevelConfig.name}
+          </p>
+        )}
+
+        <Button 
+          onClick={dismissLevelComplete}
+          className="mt-4 px-12 py-6 text-xl bg-green-900 hover:bg-green-800 border-2 border-green-600 
+                     shadow-[0_0_30px_rgba(0,255,0,0.3)] hover:shadow-[0_0_50px_rgba(0,255,0,0.5)] 
+                     transition-all duration-300"
+        >
+          <Zap className="mr-2" /> NEXT LEVEL
         </Button>
       </div>
     </div>
@@ -144,6 +222,9 @@ function UI() {
 
       {/* Level intro */}
       <LevelIntro />
+
+      {/* Level complete */}
+      <LevelComplete />
 
       {/* Start/Game Over/Victory Overlay */}
       {(!isPlaying || isGameOver || isVictory) && !useGameStore.getState().showLevelIntro && (

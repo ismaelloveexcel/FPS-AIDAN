@@ -9,18 +9,19 @@ export function Weapon() {
   const { camera, scene } = useThree();
   const weaponRef = useRef<Group>(null);
   const raycaster = useRef(new Raycaster());
-  const removeEnemy = useGameStore(state => state.removeEnemy);
+  const damageEnemy = useGameStore(state => state.damageEnemy);
   const damageBoss = useGameStore(state => state.damageBoss);
-  const addScore = useGameStore(state => state.addScore);
+  const recordShot = useGameStore(state => state.recordShot);
   const isPlaying = useGameStore(state => state.isPlaying);
   const showLevelIntro = useGameStore(state => state.showLevelIntro);
+  const showLevelComplete = useGameStore(state => state.showLevelComplete);
   
   const [isRecoiling, setIsRecoiling] = useState(false);
   const [muzzleFlash, setMuzzleFlash] = useState(false);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
-      if (!isPlaying || showLevelIntro || document.pointerLockElement !== document.body) return;
+      if (!isPlaying || showLevelIntro || showLevelComplete || document.pointerLockElement !== document.body) return;
       
       if (e.button === 0) {
         shoot();
@@ -29,7 +30,7 @@ export function Weapon() {
 
     window.addEventListener('mousedown', handleMouseDown);
     return () => window.removeEventListener('mousedown', handleMouseDown);
-  }, [isPlaying, showLevelIntro]);
+  }, [isPlaying, showLevelIntro, showLevelComplete]);
 
   useFrame(() => {
     if (weaponRef.current) {
@@ -52,24 +53,31 @@ export function Weapon() {
     raycaster.current.setFromCamera(new Vector2(0, 0), camera);
     const intersects = raycaster.current.intersectObjects(scene.children, true);
 
+    let hitSomething = false;
+    
     for (const hit of intersects) {
       let obj: Object3D | null = hit.object;
       while (obj) {
         // Check for boss hit
         if (obj.userData?.isBoss) {
           damageBoss(50); // Boss takes 50 damage per hit
-          addScore(10);
+          hitSomething = true;
+          recordShot(true);
           return;
         }
-        // Check for enemy hit
+        // Check for enemy hit - now damages instead of instant kill
         if (obj.userData?.isEnemy) {
-          removeEnemy(obj.userData.id);
-          addScore(100);
+          damageEnemy(obj.userData.id, 1); // Damage based on weapon power
+          hitSomething = true;
+          recordShot(true);
           return;
         }
         obj = obj.parent;
       }
     }
+    
+    // Missed shot
+    recordShot(hitSomething);
   };
 
   return (
