@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
 import { Loader2, Download, Cube, Image, ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -49,11 +48,16 @@ export default function AssetGenerator() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: TextTo3DFormData) => {
-      const response = await apiRequest('/api/meshy/text-to-3d', {
+      const response = await fetch('/api/meshy/text-to-3d', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      return response as { taskId: string };
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Generation failed');
+      }
+      return response.json() as Promise<{ taskId: string }>;
     },
     onSuccess: (data) => {
       setActiveTaskId(data.taskId);
@@ -73,6 +77,14 @@ export default function AssetGenerator() {
 
   const taskStatusQuery = useQuery<TaskStatus>({
     queryKey: ['/api/meshy/task', activeTaskId],
+    queryFn: async () => {
+      const response = await fetch(`/api/meshy/task/${activeTaskId}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch status');
+      }
+      return response.json();
+    },
     enabled: !!activeTaskId,
     refetchInterval: (query) => {
       const data = query.state.data;
