@@ -672,7 +672,7 @@ function UI() {
                 ) : (
                   <div className="space-y-6 text-center">
                     {/* Difficulty Selector */}
-                    <DifficultySelector onSelect={() => {}} />
+                    <DifficultySelector />
                     
                     <div className="text-red-300/70 font-mono text-xs space-y-1 border border-red-900/30 p-4 bg-black/30 rounded">
                       <p className="text-red-400 font-bold mb-2">CONTROLS</p>
