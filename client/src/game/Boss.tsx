@@ -67,8 +67,16 @@ function Demogorgon({ position }: { position: [number, number, number] }) {
       {/* 3D Model */}
       <primitive object={clonedScene} scale={2} position={[0, -2, 0]} />
       
-      {/* Eerie red glow */}
-      <pointLight color="#ff0000" intensity={3} distance={15} position={[0, 2, 0]} />
+      {/* Enhanced eerie red glow with multiple lights */}
+      <pointLight color="#ff0000" intensity={4} distance={18} position={[0, 2, 0]} />
+      <pointLight color="#aa0000" intensity={2} distance={10} position={[0, 1, 2]} />
+      <pointLight color="#ff2200" intensity={1.5} distance={8} position={[0, 0, -2]} />
+      
+      {/* Pulsing glow sphere around boss */}
+      <mesh position={[0, 1, 0]}>
+        <sphereGeometry args={[3, 16, 16]} />
+        <meshBasicMaterial color="#ff0000" transparent opacity={0.1} />
+      </mesh>
     </group>
   );
 }
@@ -126,8 +134,16 @@ function MindFlayer({ position }: { position: [number, number, number] }) {
       {/* 3D Model */}
       <primitive object={clonedScene} scale={3} position={[0, -3, 0]} />
       
-      {/* Purple shadow glow */}
-      <pointLight color="#8800ff" intensity={4} distance={20} position={[0, 0, 0]} />
+      {/* Enhanced purple shadow glow with multiple lights */}
+      <pointLight color="#8800ff" intensity={5} distance={25} position={[0, 0, 0]} />
+      <pointLight color="#aa44ff" intensity={3} distance={15} position={[2, 2, 0]} />
+      <pointLight color="#6600cc" intensity={2} distance={12} position={[-2, 1, 0]} />
+      
+      {/* Swirling energy sphere */}
+      <mesh position={[0, 2, 0]}>
+        <sphereGeometry args={[4.5, 16, 16]} />
+        <meshBasicMaterial color="#8800ff" transparent opacity={0.12} />
+      </mesh>
     </group>
   );
 }
@@ -185,9 +201,32 @@ function Vecna({ position }: { position: [number, number, number] }) {
       {/* 3D Model */}
       <primitive object={clonedScene} scale={2.5} position={[0, -3, 0]} />
       
-      {/* Psychic energy aura */}
-      <pointLight color="#ff0000" intensity={5} distance={25} position={[0, 2, 0]} />
-      <pointLight color="#440000" intensity={2} distance={10} position={[0, -1, 0]} />
+      {/* Enhanced psychic energy aura with multiple lights */}
+      <pointLight color="#ff0000" intensity={6} distance={30} position={[0, 2, 0]} />
+      <pointLight color="#440000" intensity={3} distance={15} position={[0, -1, 0]} />
+      <pointLight color="#ff2200" intensity={2.5} distance={12} position={[2, 1, 0]} />
+      <pointLight color="#880000" intensity={2} distance={10} position={[-2, 1, 0]} />
+      
+      {/* Pulsing psychic energy sphere */}
+      <mesh position={[0, 1, 0]}>
+        <sphereGeometry args={[4, 16, 16]} />
+        <meshBasicMaterial color="#ff0000" transparent opacity={0.15} />
+      </mesh>
+      
+      {/* Tendrils of dark energy */}
+      {[0, 1, 2, 3].map((i) => (
+        <mesh 
+          key={i}
+          position={[
+            Math.cos((i / 4) * Math.PI * 2) * 2.5,
+            0,
+            Math.sin((i / 4) * Math.PI * 2) * 2.5
+          ]}
+        >
+          <cylinderGeometry args={[0.1, 0.05, 3, 8]} />
+          <meshBasicMaterial color="#220000" transparent opacity={0.6} />
+        </mesh>
+      ))}
     </group>
   );
 }

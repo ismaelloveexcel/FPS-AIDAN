@@ -7,7 +7,7 @@ import { useGameStore } from './store';
 // Floating particle/spore effect for Upside Down atmosphere
 function UpsideDownParticles({ color = '#ff4444' }: { color?: string }) {
   const particlesRef = useRef<THREE.Points>(null);
-  const count = 500;
+  const count = 1000; // Increased particle count for better visuals
   
   const positions = useMemo(() => {
     const pos = new Float32Array(count * 3);
@@ -42,13 +42,60 @@ function UpsideDownParticles({ color = '#ff4444' }: { color?: string }) {
         />
       </bufferGeometry>
       <pointsMaterial 
-        size={0.15} 
+        size={0.2}  // Slightly larger particles
         color={color}
         transparent 
-        opacity={0.6}
+        opacity={0.75} // Slightly more visible
         sizeAttenuation
+        blending={THREE.AdditiveBlending} // Add glow effect
       />
     </points>
+  );
+}
+
+// Animated portal for Level 1
+function UpsideDownPortal() {
+  const portalRef = useRef<THREE.Group>(null);
+  const innerRingRef = useRef<THREE.Mesh>(null);
+  const outerRingRef = useRef<THREE.Mesh>(null);
+  
+  useFrame(({ clock }) => {
+    if (portalRef.current) {
+      portalRef.current.rotation.z = clock.getElapsedTime() * 0.3;
+    }
+    if (innerRingRef.current) {
+      innerRingRef.current.rotation.z = -clock.getElapsedTime() * 0.5;
+    }
+    if (outerRingRef.current) {
+      // Pulsing opacity effect
+      const pulse = Math.sin(clock.getElapsedTime() * 2) * 0.2 + 0.5;
+      (outerRingRef.current.material as THREE.MeshBasicMaterial).opacity = pulse;
+    }
+  });
+
+  return (
+    <group ref={portalRef} position={[0, 25, -30]} rotation={[0.3, 0, 0]}>
+      {/* Outer ring */}
+      <mesh ref={outerRingRef}>
+        <ringGeometry args={[5, 8, 32]} />
+        <meshBasicMaterial color="#ff0000" transparent opacity={0.4} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+      </mesh>
+      
+      {/* Inner ring */}
+      <mesh ref={innerRingRef}>
+        <ringGeometry args={[3, 5, 32]} />
+        <meshBasicMaterial color="#ff4400" transparent opacity={0.6} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+      </mesh>
+      
+      {/* Portal center glow */}
+      <mesh>
+        <circleGeometry args={[3, 32]} />
+        <meshBasicMaterial color="#ff2200" transparent opacity={0.3} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+      </mesh>
+      
+      {/* Portal light */}
+      <pointLight color="#ff0000" intensity={5} distance={30} />
+    </group>
   );
 }
 
@@ -332,25 +379,29 @@ export function Level() {
       </mesh>
 
       {/* Fog */}
-      <fog attach="fog" color={config.fog} near={5} far={60} />
+      <fog attach="fog" color={config.fog} near={5} far={70} />
       
-      {/* Ambient Lighting */}
-      <ambientLight intensity={0.15} color={config.ambient} />
+      {/* Ambient Lighting - slightly increased for better visibility */}
+      <ambientLight intensity={0.2} color={config.ambient} />
       
-      {/* Main lighting */}
+      {/* Main lighting - Enhanced for dramatic effect */}
       <directionalLight 
-        position={[10, 30, 10]} 
-        intensity={0.5} 
+        position={[10, 35, 10]} 
+        intensity={0.7} 
         color={currentLevel === 2 ? '#8844ff' : '#ff2200'}
         castShadow 
         shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0001}
       >
-        <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50]} />
+        <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50, 0.1, 100]} />
       </directionalLight>
 
-      {/* Accent lights */}
-      <pointLight position={[-20, 10, -20]} color={currentLevel === 2 ? '#6600ff' : '#ff0000'} intensity={1} distance={40} />
-      <pointLight position={[20, 8, 20]} color={currentLevel === 2 ? '#4400aa' : '#880000'} intensity={0.8} distance={30} />
+      {/* Accent lights - More dramatic positioning and intensity */}
+      <pointLight position={[-25, 15, -25]} color={currentLevel === 2 ? '#6600ff' : '#ff0000'} intensity={1.5} distance={50} castShadow />
+      <pointLight position={[25, 12, 25]} color={currentLevel === 2 ? '#4400aa' : '#880000'} intensity={1.2} distance={40} castShadow />
+      
+      {/* Additional rim lighting for depth */}
+      <pointLight position={[0, 5, -40]} color={currentLevel === 3 ? '#ff0000' : currentLevel === 2 ? '#aa00ff' : '#880000'} intensity={2} distance={60} />
       
       {/* Floating particles */}
       <UpsideDownParticles color={config.particleColor} />
@@ -378,15 +429,8 @@ export function Level() {
           <DeadTree position={[-25, 3, 15]} />
           <DeadTree position={[30, 3, 10]} />
 
-          {/* Portal in sky */}
-          <mesh position={[0, 25, -30]} rotation={[0.3, 0, 0]}>
-            <ringGeometry args={[5, 8, 32]} />
-            <meshBasicMaterial color="#ff0000" transparent opacity={0.3} side={THREE.DoubleSide} />
-          </mesh>
-          <mesh position={[0, 25, -30]} rotation={[0.3, 0, 0]}>
-            <ringGeometry args={[3, 5, 32]} />
-            <meshBasicMaterial color="#ff4400" transparent opacity={0.5} side={THREE.DoubleSide} />
-          </mesh>
+          {/* Animated Portal in sky */}
+          <UpsideDownPortal />
         </>
       )}
 
