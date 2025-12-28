@@ -11,7 +11,7 @@ import { BossManager } from '@/game/Boss';
 import { PowerUpManager } from '@/game/PowerUp';
 import { Button } from '@/components/ui/button';
 import { useSubmitScore, useScores } from '@/hooks/use-scores';
-import { Loader2, Trophy, Skull, Zap, Heart, Shield, Flame, Crosshair, Flashlight } from 'lucide-react';
+import { Loader2, Trophy, Skull, Zap, Heart, Shield, Flashlight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
