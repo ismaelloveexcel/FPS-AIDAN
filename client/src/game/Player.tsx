@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSphere } from '@react-three/cannon';
 import { useThree, useFrame } from '@react-three/fiber';
-import { Vector3 } from 'three';
+import { Vector3, SpotLight } from 'three';
 import { useGameStore } from './store';
 
 const BASE_SPEED = 5;
