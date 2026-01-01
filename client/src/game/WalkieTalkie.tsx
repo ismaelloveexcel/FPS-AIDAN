@@ -165,7 +165,8 @@ export function WalkieTalkieHints() {
   // Victory hint
   useEffect(() => {
     if (showVictoryCutscene || isVictory) {
-      setTimeout(() => showHint(HINTS.victory, 'victory'), 2000);
+      const victoryTimeout = setTimeout(() => showHint(HINTS.victory, 'victory'), 2000);
+      return () => clearTimeout(victoryTimeout);
     }
   }, [showVictoryCutscene, isVictory]);
 

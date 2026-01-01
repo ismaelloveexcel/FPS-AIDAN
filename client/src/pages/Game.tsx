@@ -515,13 +515,15 @@ function DifficultySelector({ onSelect }: { onSelect: () => void }) {
             onClick={() => setDifficulty(d.value)}
             className={`flex-1 py-3 px-4 rounded border-2 transition-all font-mono text-sm
               ${difficulty === d.value 
-                ? `border-${d.color}-500 bg-${d.color}-900/50 text-${d.color}-300` 
+                ? 'text-white' 
                 : 'border-red-900/30 bg-black/30 text-red-600 hover:border-red-700'}`}
             style={{
               borderColor: difficulty === d.value ? 
                 (d.color === 'green' ? '#22c55e' : d.color === 'yellow' ? '#eab308' : '#ef4444') : undefined,
               backgroundColor: difficulty === d.value ?
-                (d.color === 'green' ? 'rgba(34,197,94,0.3)' : d.color === 'yellow' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)') : undefined
+                (d.color === 'green' ? 'rgba(34,197,94,0.3)' : d.color === 'yellow' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)') : undefined,
+              color: difficulty === d.value ?
+                (d.color === 'green' ? 'rgb(134,239,172)' : d.color === 'yellow' ? 'rgb(253,224,71)' : 'rgb(252,165,165)') : undefined
             }}
           >
             {d.label}
