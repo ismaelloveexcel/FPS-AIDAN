@@ -491,7 +491,7 @@ function MiniMap() {
 }
 
 // Difficulty Selector
-function DifficultySelector({ onSelect }: { onSelect: () => void }) {
+function DifficultySelector() {
   const setDifficulty = useGameStore(state => state.setDifficulty);
   const difficulty = useGameStore(state => state.difficulty);
 
