@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap');
 /* Stranger Things-inspired typography using available Google Fonts (Bebas Neue / Nosifer / Creepster as alternatives to Benguiat) */
-@import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Creepster&family=Special+Elite&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Creepster&family=Special+Elite&family=Cinzel:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,6 +11,7 @@
   --font-display: 'Nosifer', 'Creepster', cursive;
   --font-body: 'Special Elite', 'Bebas Neue', sans-serif;
   --font-mono: 'Share Tech Mono', monospace;
+  --font-cinematic: 'Cinzel', serif;
 
   /* Stranger Things / Upside Down Palette - Dark reds and blacks */
   --background: 0 10% 3%;
@@ -228,4 +229,168 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(200, 0, 0, 0.7);
+}
+
+/* Premium Story Text Styling */
+.story-text {
+  font-family: var(--font-cinematic);
+  line-height: 1.8;
+  text-shadow: 0 0 20px rgba(255, 100, 100, 0.3);
+}
+
+/* Premium breathing glow animation */
+@keyframes breathe {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px #ff0000,
+      0 0 20px #ff0000,
+      0 0 30px #cc0000;
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 
+      0 0 20px #ff0000,
+      0 0 40px #ff0000,
+      0 0 60px #ff0000,
+      0 0 80px #cc0000;
+    filter: brightness(1.2);
+  }
+}
+
+.premium-glow {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* Premium chromatic aberration effect */
+.chromatic-text {
+  position: relative;
+}
+
+.chromatic-text::before,
+.chromatic-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+}
+
+.chromatic-text::before {
+  color: #ff0000;
+  animation: glitch-1 2s infinite linear alternate-reverse;
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+}
+
+.chromatic-text::after {
+  color: #00ffff;
+  animation: glitch-2 3s infinite linear alternate-reverse;
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+}
+
+@keyframes glitch-1 {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+@keyframes glitch-2 {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(2px); }
+  50% { transform: translateX(-2px); }
+  75% { transform: translateX(1px); }
+}
+
+/* Premium button hover effect */
+.premium-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.premium-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.premium-button:hover::before {
+  left: 100%;
+}
+
+.premium-button:hover {
+  transform: scale(1.02);
+  box-shadow: 
+    0 0 30px rgba(255, 0, 0, 0.6),
+    0 0 60px rgba(255, 0, 0, 0.3),
+    inset 0 0 20px rgba(255, 0, 0, 0.1);
+}
+
+/* Premium atmospheric particles */
+@keyframes rise {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) scale(1);
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: fixed;
+  pointer-events: none;
+  animation: rise linear infinite;
+}
+
+/* Premium level transition */
+@keyframes slideInFromDark {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.level-intro-animate {
+  animation: slideInFromDark 1s ease-out forwards;
+}
+
+/* Premium subtitle styling */
+.premium-subtitle {
+  background: linear-gradient(90deg, #ff4444, #ff8888, #ff4444);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }

@@ -162,26 +162,43 @@ function LevelIntro() {
   const config = LEVEL_CONFIG[currentLevel];
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/90 pointer-events-auto z-50">
-      <div className="text-center space-y-8">
-        <div className="text-red-600 font-mono text-xl tracking-widest">LEVEL {currentLevel}</div>
-        <h1 className="stranger-title text-6xl md:text-8xl text-red-500 drop-shadow-[0_0_30px_rgba(255,0,0,0.8)] animate-pulse">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/95 pointer-events-auto z-50">
+      <div className="text-center space-y-6 max-w-2xl mx-auto px-6 level-intro-animate">
+        <div className="text-red-600 font-mono text-xl tracking-[0.5em] uppercase">Chapter {currentLevel}</div>
+        <h1 className="stranger-title premium-glow text-5xl md:text-7xl text-red-500 drop-shadow-[0_0_40px_rgba(255,0,0,0.9)]">
           {config.name}
         </h1>
-        <p className="text-red-300 text-2xl font-mono tracking-wider">
+        <p className="text-red-300 text-2xl font-mono tracking-wider premium-subtitle">
           {config.subtitle}
         </p>
-        <p className="text-red-400/70 text-lg font-mono italic max-w-md mx-auto">
-          "{config.storyText}"
-        </p>
+        <div className="border-t border-b border-red-900/30 py-6 my-4">
+          <p className="text-red-400/90 text-lg leading-relaxed story-text max-w-xl mx-auto">
+            "{config.storyText}"
+          </p>
+        </div>
         <Button 
           onClick={dismissLevelIntro}
-          className="mt-8 px-12 py-6 text-xl bg-red-900 hover:bg-red-800 border-2 border-red-600 
-                     shadow-[0_0_30px_rgba(255,0,0,0.5)] hover:shadow-[0_0_50px_rgba(255,0,0,0.7)] 
-                     transition-all duration-300"
+          className="mt-6 px-12 py-6 text-xl bg-red-900 hover:bg-red-800 border-2 border-red-600 
+                     shadow-[0_0_30px_rgba(255,0,0,0.5)] hover:shadow-[0_0_60px_rgba(255,0,0,0.8)] 
+                     transition-all duration-300 premium-button"
         >
-          <Zap className="mr-2" /> ENTER THE UPSIDE DOWN
+          <Zap className="mr-2" /> BEGIN THE HUNT
         </Button>
+      </div>
+      
+      {/* Atmospheric floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-red-500/40 rounded-full particle"
+            style={{
+              left: `${Math.random() * 100}%`,
+              animationDuration: `${8 + Math.random() * 12}s`,
+              animationDelay: `${Math.random() * 5}s`
+            }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -211,51 +228,55 @@ function LevelComplete() {
   const nextLevelConfig = currentLevel < 3 ? LEVEL_CONFIG[nextLevel] : null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/90 pointer-events-auto z-50">
-      <div className="text-center space-y-6 max-w-lg">
-        <div className="text-green-500 font-mono text-2xl tracking-widest">LEVEL {currentLevel} COMPLETE</div>
-        <h1 className="stranger-title text-5xl text-red-500 drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/95 pointer-events-auto z-50">
+      <div className="text-center space-y-6 max-w-xl level-intro-animate">
+        <div className="text-green-400 font-mono text-xl tracking-[0.5em] uppercase premium-subtitle">
+          Chapter {currentLevel} Complete
+        </div>
+        <h1 className="stranger-title text-5xl text-red-500 drop-shadow-[0_0_30px_rgba(255,0,0,0.8)] premium-glow">
           {prevLevelConfig.name}
         </h1>
         
         {/* Stats */}
-        <div className="bg-black/50 border border-red-900/50 rounded-lg p-6 space-y-3">
+        <div className="bg-black/60 border border-red-900/50 rounded-lg p-6 space-y-3 backdrop-blur-sm">
           <div className="flex justify-between text-red-300 font-mono">
-            <span>Enemies Killed:</span>
-            <span className="text-white">{enemiesKilled}</span>
+            <span>Enemies Vanquished:</span>
+            <span className="text-white font-bold">{enemiesKilled}</span>
           </div>
           <div className="flex justify-between text-red-300 font-mono">
             <span>Accuracy:</span>
-            <span className="text-white">{accuracy}%</span>
+            <span className="text-white font-bold">{accuracy}%</span>
           </div>
           <div className="flex justify-between text-red-300 font-mono">
-            <span>Time:</span>
-            <span className="text-white">{minutes}:{seconds.toString().padStart(2, '0')}</span>
+            <span>Survival Time:</span>
+            <span className="text-white font-bold">{minutes}:{seconds.toString().padStart(2, '0')}</span>
           </div>
-          <div className="flex justify-between text-red-300 font-mono border-t border-red-900/30 pt-3">
-            <span>Score:</span>
-            <span className="text-yellow-400 font-bold">{score}</span>
+          <div className="flex justify-between text-red-300 font-mono border-t border-red-900/30 pt-3 mt-2">
+            <span>Total Score:</span>
+            <span className="text-yellow-400 font-bold text-xl">{score.toLocaleString()}</span>
           </div>
         </div>
 
         {/* Story transition */}
-        <p className="text-red-400/70 text-lg font-mono italic">
-          "{prevLevelConfig.victoryText}"
-        </p>
+        <div className="border-t border-b border-red-900/30 py-4">
+          <p className="text-red-400/90 text-lg leading-relaxed story-text">
+            "{prevLevelConfig.victoryText}"
+          </p>
+        </div>
 
         {nextLevelConfig && (
-          <p className="text-purple-400 text-xl font-mono">
-            Next: {nextLevelConfig.name}
-          </p>
+          <div className="text-purple-400 text-lg font-mono">
+            <span className="text-purple-600">Next Chapter:</span> {nextLevelConfig.name}
+          </div>
         )}
 
         <Button 
           onClick={dismissLevelComplete}
           className="mt-4 px-12 py-6 text-xl bg-green-900 hover:bg-green-800 border-2 border-green-600 
-                     shadow-[0_0_30px_rgba(0,255,0,0.3)] hover:shadow-[0_0_50px_rgba(0,255,0,0.5)] 
-                     transition-all duration-300"
+                     shadow-[0_0_30px_rgba(0,255,0,0.3)] hover:shadow-[0_0_60px_rgba(0,255,0,0.6)] 
+                     transition-all duration-300 premium-button"
         >
-          <Zap className="mr-2" /> NEXT LEVEL
+          <Zap className="mr-2" /> CONTINUE THE HUNT
         </Button>
       </div>
     </div>
@@ -491,7 +512,7 @@ function MiniMap() {
 }
 
 // Difficulty Selector
-function DifficultySelector({ onSelect }: { onSelect: () => void }) {
+function DifficultySelector() {
   const setDifficulty = useGameStore(state => state.setDifficulty);
   const difficulty = useGameStore(state => state.difficulty);
 
@@ -627,13 +648,19 @@ function UI() {
       {(!isPlaying || isGameOver || isVictory) && !useGameStore.getState().showLevelIntro && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/85 pointer-events-auto backdrop-blur-sm z-50">
           <div className="bg-zinc-950/95 border-2 border-red-900/50 p-8 rounded-lg max-w-2xl w-full shadow-[0_0_100px_rgba(255,0,0,0.2)]">
-            <h1 className="stranger-title text-5xl md:text-7xl text-center mb-8 text-red-500 drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+            <h1 className="stranger-title premium-glow text-5xl md:text-7xl text-center mb-2 text-red-500 drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
               {isVictory ? "VICTORY" : isGameOver ? "GAME OVER" : "STRANGER THINGS"}
             </h1>
             
+            {!isGameOver && !isVictory && (
+              <p className="text-center text-red-400/80 text-sm font-mono tracking-[0.3em] mb-6 premium-subtitle">
+                THE UPSIDE DOWN AWAITS
+              </p>
+            )}
+            
             {isVictory && (
-              <p className="text-center text-red-300 text-xl mb-6 font-mono">
-                You defeated Vecna and saved Hawkins!
+              <p className="text-center text-red-300 text-xl mb-6 font-mono story-text">
+                The nightmare ends. Hawkins is saved. But some doors, once opened, can never truly be closed...
               </p>
             )}
 

@@ -60,28 +60,31 @@ export const LEVEL_CONFIG = {
     boss: 'demogorgon' as BossType, 
     bossHealth: 500, 
     name: 'THE UPSIDE DOWN',
-    subtitle: 'Defeat the Demogorgon',
-    storyText: 'The gate has opened. The Demogorgon hunts...',
-    victoryText: 'The Demogorgon falls, but the gate widens...',
-    unlockedWeapon: 'pistol' as WeaponType
+    subtitle: 'Face the Demogorgon',
+    storyText: 'November 1983. A rift between worlds has torn open beneath Hawkins Laboratory. From the darkness emerges a creature of pure nightmare—the Demogorgon. It feeds on fear. It hunts in shadows. And now... it hunts you.',
+    victoryText: 'The Demogorgon collapses into ash, but the ground trembles. The gate grows wider. Something far worse is coming...',
+    unlockedWeapon: 'pistol' as WeaponType,
+    atmosphere: 'The air tastes like copper and decay.'
   },
   2: { 
     boss: 'mindflayer' as BossType, 
     bossHealth: 800, 
     name: 'THE SHADOW REALM',
-    subtitle: 'Destroy the Mind Flayer',
-    storyText: 'Storm clouds gather. The Mind Flayer approaches...',
-    victoryText: 'The shadow recedes, but a darker evil awaits...',
-    unlockedWeapon: 'nailbat' as WeaponType
+    subtitle: 'Survive the Mind Flayer',
+    storyText: 'The sky bleeds crimson as storm clouds swirl above Hawkins. The Mind Flayer—a cosmic entity of unfathomable evil—extends its shadow across the land. It does not merely kill. It possesses. It corrupts. It becomes you.',
+    victoryText: 'Lightning cracks as the Mind Flayer\'s form dissolves into the storm. But in the silence that follows, you hear it—the chiming of a grandfather clock. Somewhere, Vecna waits.',
+    unlockedWeapon: 'nailbat' as WeaponType,
+    atmosphere: 'Reality bends at the edges of your vision.'
   },
   3: { 
     boss: 'vecna' as BossType, 
     bossHealth: 1500, 
     name: 'VECNA\'S LAIR',
-    subtitle: 'End Vecna\'s Terror',
-    storyText: 'The clock chimes. Vecna\'s curse begins...',
-    victoryText: 'Vecna is defeated! Hawkins is saved!',
-    unlockedWeapon: 'flamethrower' as WeaponType
+    subtitle: 'End the Nightmare',
+    storyText: 'The Creel House stands before you, warped and twisted by Vecna\'s influence. Henry Creel—One—Vecna. Three names for the same ancient evil. He has opened four gates. He seeks to merge worlds. Only you stand between Hawkins and total annihilation.',
+    victoryText: 'Vecna\'s body crumbles as light floods the Upside Down. The gates seal. The nightmare ends. Hawkins is saved—but some doors, once opened, can never truly be closed...',
+    unlockedWeapon: 'flamethrower' as WeaponType,
+    atmosphere: 'Time itself seems to fracture around you.'
   },
 };
 
