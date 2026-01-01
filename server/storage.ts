@@ -15,9 +15,9 @@ export interface IStorage {
 // In-memory storage fallback when no database is available
 export class MemoryStorage implements IStorage {
   private scores: Score[] = [
-    { id: 1, username: "DevTeam", score: 1000, createdAt: new Date() },
-    { id: 2, username: "PlayerOne", score: 500, createdAt: new Date() },
-    { id: 3, username: "Newbie", score: 100, createdAt: new Date() },
+    { id: 1, username: "DevTeam", score: 1000, createdAt: new Date("2024-01-01T00:00:00Z") },
+    { id: 2, username: "PlayerOne", score: 500, createdAt: new Date("2024-01-01T00:00:00Z") },
+    { id: 3, username: "Newbie", score: 100, createdAt: new Date("2024-01-01T00:00:00Z") },
   ];
   private nextScoreId = 4;
   private gameAssets: GameAsset[] = [];
@@ -128,5 +128,13 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
+// Factory function to create the appropriate storage implementation
+function createStorage(): IStorage {
+  if (db) {
+    return new DatabaseStorage();
+  }
+  return new MemoryStorage();
+}
+
 // Use database storage if available, otherwise fall back to memory storage
-export const storage: IStorage = db ? new DatabaseStorage() : new MemoryStorage();
+export const storage: IStorage = createStorage();
