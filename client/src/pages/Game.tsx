@@ -2,16 +2,18 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
 import { PointerLockControls } from '@react-three/drei';
 import { Suspense, useEffect, useRef } from 'react';
-import { useGameStore, LEVEL_CONFIG, Difficulty, WeaponType } from '@/game/store';
+import { useGameStore, LEVEL_CONFIG, WEAPON_STATS, POWERUP_CONFIG, Difficulty, WeaponType } from '@/game/store';
 import { Player } from '@/game/Player';
 import { Weapon } from '@/game/Weapon';
 import { Level } from '@/game/Level';
 import { EnemyManager } from '@/game/Enemy';
 import { BossManager } from '@/game/Boss';
 import { PowerUpManager } from '@/game/PowerUp';
+import { WalkieTalkieHints } from '@/game/WalkieTalkie';
+import { audioManager } from '@/game/AudioManager';
 import { Button } from '@/components/ui/button';
 import { useSubmitScore, useScores } from '@/hooks/use-scores';
-import { Loader2, Trophy, Skull, Zap, Heart, Shield, Flashlight } from 'lucide-react';
+import { Loader2, Trophy, Skull, Zap, Heart, Shield, Flame, Crosshair, Flashlight, Volume2, VolumeX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -121,6 +123,7 @@ function DedicationScreen({ onComplete }: { onComplete: () => void }) {
 // Boss health bar component
 function BossHealthBar() {
   const boss = useGameStore(state => state.boss);
+  const currentLevel = useGameStore(state => state.currentLevel);
   
   if (!boss) return null;
   
@@ -162,43 +165,26 @@ function LevelIntro() {
   const config = LEVEL_CONFIG[currentLevel];
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/95 pointer-events-auto z-50">
-      <div className="text-center space-y-6 max-w-2xl mx-auto px-6 level-intro-animate">
-        <div className="text-red-600 font-mono text-xl tracking-[0.5em] uppercase">Chapter {currentLevel}</div>
-        <h1 className="stranger-title premium-glow text-5xl md:text-7xl text-red-500 drop-shadow-[0_0_40px_rgba(255,0,0,0.9)]">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/90 pointer-events-auto z-50">
+      <div className="text-center space-y-8">
+        <div className="text-red-600 font-mono text-xl tracking-widest">LEVEL {currentLevel}</div>
+        <h1 className="stranger-title text-6xl md:text-8xl text-red-500 drop-shadow-[0_0_30px_rgba(255,0,0,0.8)] animate-pulse">
           {config.name}
         </h1>
-        <p className="text-red-300 text-2xl font-mono tracking-wider premium-subtitle">
+        <p className="text-red-300 text-2xl font-mono tracking-wider">
           {config.subtitle}
         </p>
-        <div className="border-t border-b border-red-900/30 py-6 my-4">
-          <p className="text-red-400/90 text-lg leading-relaxed story-text max-w-xl mx-auto">
-            "{config.storyText}"
-          </p>
-        </div>
+        <p className="text-red-400/70 text-lg font-mono italic max-w-md mx-auto">
+          "{config.storyText}"
+        </p>
         <Button 
           onClick={dismissLevelIntro}
-          className="mt-6 px-12 py-6 text-xl bg-red-900 hover:bg-red-800 border-2 border-red-600 
-                     shadow-[0_0_30px_rgba(255,0,0,0.5)] hover:shadow-[0_0_60px_rgba(255,0,0,0.8)] 
-                     transition-all duration-300 premium-button"
+          className="mt-8 px-12 py-6 text-xl bg-red-900 hover:bg-red-800 border-2 border-red-600 
+                     shadow-[0_0_30px_rgba(255,0,0,0.5)] hover:shadow-[0_0_50px_rgba(255,0,0,0.7)] 
+                     transition-all duration-300"
         >
-          <Zap className="mr-2" /> BEGIN THE HUNT
+          <Zap className="mr-2" /> ENTER THE UPSIDE DOWN
         </Button>
-      </div>
-      
-      {/* Atmospheric floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-red-500/40 rounded-full particle"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDuration: `${8 + Math.random() * 12}s`,
-              animationDelay: `${Math.random() * 5}s`
-            }}
-          />
-        ))}
       </div>
     </div>
   );
@@ -228,55 +214,51 @@ function LevelComplete() {
   const nextLevelConfig = currentLevel < 3 ? LEVEL_CONFIG[nextLevel] : null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/95 pointer-events-auto z-50">
-      <div className="text-center space-y-6 max-w-xl level-intro-animate">
-        <div className="text-green-400 font-mono text-xl tracking-[0.5em] uppercase premium-subtitle">
-          Chapter {currentLevel} Complete
-        </div>
-        <h1 className="stranger-title text-5xl text-red-500 drop-shadow-[0_0_30px_rgba(255,0,0,0.8)] premium-glow">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/90 pointer-events-auto z-50">
+      <div className="text-center space-y-6 max-w-lg">
+        <div className="text-green-500 font-mono text-2xl tracking-widest">LEVEL {currentLevel} COMPLETE</div>
+        <h1 className="stranger-title text-5xl text-red-500 drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
           {prevLevelConfig.name}
         </h1>
         
         {/* Stats */}
-        <div className="bg-black/60 border border-red-900/50 rounded-lg p-6 space-y-3 backdrop-blur-sm">
+        <div className="bg-black/50 border border-red-900/50 rounded-lg p-6 space-y-3">
           <div className="flex justify-between text-red-300 font-mono">
-            <span>Enemies Vanquished:</span>
-            <span className="text-white font-bold">{enemiesKilled}</span>
+            <span>Enemies Killed:</span>
+            <span className="text-white">{enemiesKilled}</span>
           </div>
           <div className="flex justify-between text-red-300 font-mono">
             <span>Accuracy:</span>
-            <span className="text-white font-bold">{accuracy}%</span>
+            <span className="text-white">{accuracy}%</span>
           </div>
           <div className="flex justify-between text-red-300 font-mono">
-            <span>Survival Time:</span>
-            <span className="text-white font-bold">{minutes}:{seconds.toString().padStart(2, '0')}</span>
+            <span>Time:</span>
+            <span className="text-white">{minutes}:{seconds.toString().padStart(2, '0')}</span>
           </div>
-          <div className="flex justify-between text-red-300 font-mono border-t border-red-900/30 pt-3 mt-2">
-            <span>Total Score:</span>
-            <span className="text-yellow-400 font-bold text-xl">{score.toLocaleString()}</span>
+          <div className="flex justify-between text-red-300 font-mono border-t border-red-900/30 pt-3">
+            <span>Score:</span>
+            <span className="text-yellow-400 font-bold">{score}</span>
           </div>
         </div>
 
         {/* Story transition */}
-        <div className="border-t border-b border-red-900/30 py-4">
-          <p className="text-red-400/90 text-lg leading-relaxed story-text">
-            "{prevLevelConfig.victoryText}"
-          </p>
-        </div>
+        <p className="text-red-400/70 text-lg font-mono italic">
+          "{prevLevelConfig.victoryText}"
+        </p>
 
         {nextLevelConfig && (
-          <div className="text-purple-400 text-lg font-mono">
-            <span className="text-purple-600">Next Chapter:</span> {nextLevelConfig.name}
-          </div>
+          <p className="text-purple-400 text-xl font-mono">
+            Next: {nextLevelConfig.name}
+          </p>
         )}
 
         <Button 
           onClick={dismissLevelComplete}
           className="mt-4 px-12 py-6 text-xl bg-green-900 hover:bg-green-800 border-2 border-green-600 
-                     shadow-[0_0_30px_rgba(0,255,0,0.3)] hover:shadow-[0_0_60px_rgba(0,255,0,0.6)] 
-                     transition-all duration-300 premium-button"
+                     shadow-[0_0_30px_rgba(0,255,0,0.3)] hover:shadow-[0_0_50px_rgba(0,255,0,0.5)] 
+                     transition-all duration-300"
         >
-          <Zap className="mr-2" /> CONTINUE THE HUNT
+          <Zap className="mr-2" /> NEXT LEVEL
         </Button>
       </div>
     </div>
@@ -411,6 +393,7 @@ function WeaponHUD() {
 
 // Power-up Effects HUD
 function PowerUpHUD() {
+  const activeEffects = useGameStore(state => state.activeEffects);
   const shield = useGameStore(state => state.shield);
   const speedMultiplier = useGameStore(state => state.speedMultiplier);
   const flashlightBattery = useGameStore(state => state.flashlightBattery);
@@ -512,7 +495,7 @@ function MiniMap() {
 }
 
 // Difficulty Selector
-function DifficultySelector() {
+function DifficultySelector({ onSelect }: { onSelect: () => void }) {
   const setDifficulty = useGameStore(state => state.setDifficulty);
   const difficulty = useGameStore(state => state.difficulty);
 
@@ -532,13 +515,15 @@ function DifficultySelector() {
             onClick={() => setDifficulty(d.value)}
             className={`flex-1 py-3 px-4 rounded border-2 transition-all font-mono text-sm
               ${difficulty === d.value 
-                ? 'border-transparent text-white' 
+                ? 'text-white' 
                 : 'border-red-900/30 bg-black/30 text-red-600 hover:border-red-700'}`}
             style={{
               borderColor: difficulty === d.value ? 
                 (d.color === 'green' ? '#22c55e' : d.color === 'yellow' ? '#eab308' : '#ef4444') : undefined,
               backgroundColor: difficulty === d.value ?
-                (d.color === 'green' ? 'rgba(34,197,94,0.3)' : d.color === 'yellow' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)') : undefined
+                (d.color === 'green' ? 'rgba(34,197,94,0.3)' : d.color === 'yellow' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)') : undefined,
+              color: difficulty === d.value ?
+                (d.color === 'green' ? 'rgb(134,239,172)' : d.color === 'yellow' ? 'rgb(253,224,71)' : 'rgb(252,165,165)') : undefined
             }}
           >
             {d.label}
@@ -553,12 +538,40 @@ function DifficultySelector() {
 }
 
 function UI() {
-  const { score, health, isGameOver, isVictory, isPlaying, startGame, resetGame, currentLevel } = useGameStore();
+  const { score, health, isGameOver, isVictory, isPlaying, startGame, resetGame, currentLevel, showLevelIntro } = useGameStore();
   const shield = useGameStore(state => state.shield);
   const { mutate: submitScore, isPending } = useSubmitScore();
   const [username, setUsername] = useState("");
+  const [isMuted, setIsMuted] = useState(false);
   const { toast } = useToast();
   const { data: scores } = useScores();
+
+  // Initialize audio on component mount
+  useEffect(() => {
+    audioManager.initializeGameAudio();
+    return () => {
+      audioManager.cleanup();
+    };
+  }, []);
+
+  // Play appropriate music based on game state
+  useEffect(() => {
+    if (isPlaying && !showLevelIntro) {
+      if (currentLevel === 1) {
+        audioManager.playMusic('level1-music', true);
+      } else if (currentLevel === 2) {
+        audioManager.playMusic('level2-music', true);
+      } else if (currentLevel === 3) {
+        audioManager.playMusic('level3-music', true);
+      }
+    } else if (!isPlaying && !isGameOver && !isVictory) {
+      audioManager.playMusic('menu-music', true);
+    } else if (isVictory) {
+      audioManager.playMusic('victory-music', true);
+    } else if (isGameOver) {
+      audioManager.stopMusic(true);
+    }
+  }, [isPlaying, currentLevel, showLevelIntro, isGameOver, isVictory]);
 
   const handleStart = () => {
     const canvas = document.querySelector('canvas');
@@ -574,10 +587,16 @@ function UI() {
     submitScore({ username, score }, {
       onSuccess: () => {
         toast({ title: "Score Saved!", description: `You ranked on the leaderboard!` });
+        audioManager.playSound('level-complete', 0.7);
         resetGame();
         setUsername("");
       }
     });
+  };
+
+  const toggleMute = () => {
+    audioManager.toggleMute();
+    setIsMuted(audioManager.getMuted());
   };
 
   return (
@@ -593,6 +612,14 @@ function UI() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
+          {/* Audio control */}
+          <button
+            onClick={toggleMute}
+            className="pointer-events-auto bg-black/50 border border-red-900 rounded p-2 hover:bg-red-900/30 transition-colors"
+          >
+            {isMuted ? <VolumeX className="w-5 h-5 text-red-500" /> : <Volume2 className="w-5 h-5 text-red-400" />}
+          </button>
+          
           <div className="hud-text text-2xl font-bold text-red-400 drop-shadow-[0_0_10px_rgba(255,0,0,0.5)]">
             HEALTH: {health}%
           </div>
@@ -617,6 +644,9 @@ function UI() {
           )}
         </div>
       </div>
+
+      {/* Walkie-Talkie Hints */}
+      <WalkieTalkieHints />
 
       {/* Crosshair - Stranger Things style */}
       <div className="crosshair-st" />
@@ -648,19 +678,13 @@ function UI() {
       {(!isPlaying || isGameOver || isVictory) && !useGameStore.getState().showLevelIntro && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/85 pointer-events-auto backdrop-blur-sm z-50">
           <div className="bg-zinc-950/95 border-2 border-red-900/50 p-8 rounded-lg max-w-2xl w-full shadow-[0_0_100px_rgba(255,0,0,0.2)]">
-            <h1 className="stranger-title premium-glow text-5xl md:text-7xl text-center mb-2 text-red-500 drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+            <h1 className="stranger-title text-5xl md:text-7xl text-center mb-8 text-red-500 drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
               {isVictory ? "VICTORY" : isGameOver ? "GAME OVER" : "STRANGER THINGS"}
             </h1>
             
-            {!isGameOver && !isVictory && (
-              <p className="text-center text-red-400/80 text-sm font-mono tracking-[0.3em] mb-6 premium-subtitle">
-                THE UPSIDE DOWN AWAITS
-              </p>
-            )}
-            
             {isVictory && (
-              <p className="text-center text-red-300 text-xl mb-6 font-mono story-text">
-                The nightmare ends. Hawkins is saved. But some doors, once opened, can never truly be closed...
+              <p className="text-center text-red-300 text-xl mb-6 font-mono">
+                You defeated Vecna and saved Hawkins!
               </p>
             )}
 
@@ -697,7 +721,7 @@ function UI() {
                 ) : (
                   <div className="space-y-6 text-center">
                     {/* Difficulty Selector */}
-                    <DifficultySelector />
+                    <DifficultySelector onSelect={() => {}} />
                     
                     <div className="text-red-300/70 font-mono text-xs space-y-1 border border-red-900/30 p-4 bg-black/30 rounded">
                       <p className="text-red-400 font-bold mb-2">CONTROLS</p>

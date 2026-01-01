@@ -2,7 +2,8 @@ import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useSphere } from '@react-three/cannon';
 import * as THREE from 'three';
-import { useGameStore, PowerUpType } from './store';
+import { useGameStore, PowerUpType, POWERUP_CONFIG } from './store';
+import { audioManager } from './AudioManager';
 
 interface PowerUpProps {
   id: string;
@@ -107,6 +108,12 @@ export function PowerUp({ id, type, position }: PowerUpProps) {
     userData: { isPowerUp: true, powerUpId: id, powerUpType: type },
     onCollide: (e) => {
       if (e.body?.userData?.isPlayer) {
+        // Play appropriate sound based on power-up type
+        if (type === 'eggo') {
+          audioManager.playSound('health-restore', 0.8);
+        } else {
+          audioManager.playSound('powerup-collect', 0.7);
+        }
         collectPowerUp(id);
       }
     }
@@ -134,6 +141,7 @@ export function PowerUpManager() {
   const isPlaying = useGameStore(state => state.isPlaying);
   const showLevelIntro = useGameStore(state => state.showLevelIntro);
   const spawnPowerUp = useGameStore(state => state.spawnPowerUp);
+  const currentLevel = useGameStore(state => state.currentLevel);
 
   // Spawn power-ups periodically
   useEffect(() => {

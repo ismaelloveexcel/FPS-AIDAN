@@ -1,7 +1,10 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3, Raycaster, Vector2, Group, Object3D } from 'three';
-import { useGameStore, WEAPON_STATS } from './store';
+import { useGameStore, WEAPON_STATS, WeaponType } from './store';
+import { audioManager } from './AudioManager';
+
+const WEAPON_OFFSET = new Vector3(0.5, -0.3, 0.5);
 
 // Pistol model
 function PistolModel({ isRecoiling, muzzleFlash }: { isRecoiling: boolean; muzzleFlash: boolean }) {
@@ -175,106 +178,7 @@ export function Weapon() {
   const [isSwinging, setIsSwinging] = useState(false);
   const [isFiring, setIsFiring] = useState(false);
   const lastFireTime = useRef(0);
-
-  const pistolShoot = useCallback(() => {
-    setIsRecoiling(true);
-    setMuzzleFlash(true);
-    setTimeout(() => setIsRecoiling(false), 100);
-    setTimeout(() => setMuzzleFlash(false), 50);
-    
-    raycaster.current.setFromCamera(new Vector2(0, 0), camera);
-    const intersects = raycaster.current.intersectObjects(scene.children, true);
-
-    for (const hit of intersects) {
-      let obj: Object3D | null = hit.object;
-      while (obj) {
-        if (obj.userData?.isBoss) {
-          damageBoss(WEAPON_STATS.pistol.damage);
-          recordShot(true);
-          return;
-        }
-        if (obj.userData?.isEnemy) {
-          damageEnemy(obj.userData.id, 1);
-          recordShot(true);
-          return;
-        }
-        obj = obj.parent;
-      }
-    }
-    recordShot(false);
-  }, [camera, scene, damageBoss, damageEnemy, recordShot]);
-
-  const nailbatSwing = useCallback(() => {
-    setIsSwinging(true);
-    setTimeout(() => setIsSwinging(false), 300);
-    
-    raycaster.current.setFromCamera(new Vector2(0, 0), camera);
-    const intersects = raycaster.current.intersectObjects(scene.children, true);
-
-    for (const hit of intersects) {
-      if (hit.distance > WEAPON_STATS.nailbat.range) continue;
-      
-      let obj: Object3D | null = hit.object;
-      while (obj) {
-        if (obj.userData?.isBoss) {
-          damageBoss(WEAPON_STATS.nailbat.damage);
-          recordShot(true);
-          return;
-        }
-        if (obj.userData?.isEnemy) {
-          damageEnemy(obj.userData.id, 3);
-          recordShot(true);
-          return;
-        }
-        obj = obj.parent;
-      }
-    }
-    recordShot(false);
-  }, [camera, scene, damageBoss, damageEnemy, recordShot]);
-
-  const flamethrowerAttack = useCallback(() => {
-    raycaster.current.setFromCamera(new Vector2(0, 0), camera);
-    const intersects = raycaster.current.intersectObjects(scene.children, true);
-
-    for (const hit of intersects) {
-      if (hit.distance > WEAPON_STATS.flamethrower.range) continue;
-      
-      let obj: Object3D | null = hit.object;
-      while (obj) {
-        if (obj.userData?.isBoss) {
-          damageBoss(WEAPON_STATS.flamethrower.damage);
-          recordShot(true);
-          return;
-        }
-        if (obj.userData?.isEnemy) {
-          damageEnemy(obj.userData.id, 1);
-          recordShot(true);
-          return;
-        }
-        obj = obj.parent;
-      }
-    }
-  }, [camera, scene, damageBoss, damageEnemy, recordShot]);
-
-  const attack = useCallback(() => {
-    const weaponStats = WEAPON_STATS[currentWeapon];
-    const now = Date.now();
-    
-    if (now - lastFireTime.current < weaponStats.fireRate) return;
-    lastFireTime.current = now;
-
-    switch (currentWeapon) {
-      case 'pistol':
-        pistolShoot();
-        break;
-      case 'nailbat':
-        nailbatSwing();
-        break;
-      case 'flamethrower':
-        setIsFiring(true);
-        break;
-    }
-  }, [currentWeapon, pistolShoot, nailbatSwing]);
+  const flamethrowerSoundPlaying = useRef(false);
 
   // Weapon switching with number keys
   useEffect(() => {
@@ -300,11 +204,19 @@ export function Weapon() {
       
       if (e.button === 0) {
         attack();
+        // Start flamethrower sound when firing starts
+        if (currentWeapon === 'flamethrower' && !flamethrowerSoundPlaying.current) {
+          flamethrowerSoundPlaying.current = true;
+        }
       }
     };
 
     const handleMouseUp = () => {
       setIsFiring(false);
+      // Stop flamethrower sound when firing stops
+      if (flamethrowerSoundPlaying.current) {
+        flamethrowerSoundPlaying.current = false;
+      }
     };
 
     window.addEventListener('mousedown', handleMouseDown);
@@ -313,7 +225,7 @@ export function Weapon() {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isPlaying, showLevelIntro, showLevelComplete, currentWeapon, attack]);
+  }, [isPlaying, showLevelIntro, showLevelComplete, currentWeapon]);
 
   // Continuous flamethrower firing
   useFrame(() => {
@@ -340,6 +252,119 @@ export function Weapon() {
       }
     }
   });
+
+  const attack = () => {
+    const weaponStats = WEAPON_STATS[currentWeapon];
+    const now = Date.now();
+    
+    if (now - lastFireTime.current < weaponStats.fireRate) return;
+    lastFireTime.current = now;
+
+    switch (currentWeapon) {
+      case 'pistol':
+        pistolShoot();
+        break;
+      case 'nailbat':
+        nailbatSwing();
+        break;
+      case 'flamethrower':
+        setIsFiring(true);
+        break;
+    }
+  };
+
+  const pistolShoot = () => {
+    setIsRecoiling(true);
+    setMuzzleFlash(true);
+    setTimeout(() => setIsRecoiling(false), 100);
+    setTimeout(() => setMuzzleFlash(false), 50);
+    
+    // Play pistol sound
+    audioManager.playSound('pistol-shot', 0.6);
+    
+    raycaster.current.setFromCamera(new Vector2(0, 0), camera);
+    const intersects = raycaster.current.intersectObjects(scene.children, true);
+
+    for (const hit of intersects) {
+      let obj: Object3D | null = hit.object;
+      while (obj) {
+        if (obj.userData?.isBoss) {
+          damageBoss(WEAPON_STATS.pistol.damage);
+          recordShot(true);
+          return;
+        }
+        if (obj.userData?.isEnemy) {
+          damageEnemy(obj.userData.id, 1);
+          recordShot(true);
+          return;
+        }
+        obj = obj.parent;
+      }
+    }
+    recordShot(false);
+  };
+
+  const nailbatSwing = () => {
+    setIsSwinging(true);
+    setTimeout(() => setIsSwinging(false), 300);
+    
+    // Play bat swing sound
+    audioManager.playSound('bat-swing', 0.7);
+    
+    // Melee range check
+    raycaster.current.setFromCamera(new Vector2(0, 0), camera);
+    const intersects = raycaster.current.intersectObjects(scene.children, true);
+
+    for (const hit of intersects) {
+      if (hit.distance > WEAPON_STATS.nailbat.range) continue;
+      
+      let obj: Object3D | null = hit.object;
+      while (obj) {
+        if (obj.userData?.isBoss) {
+          damageBoss(WEAPON_STATS.nailbat.damage);
+          recordShot(true);
+          return;
+        }
+        if (obj.userData?.isEnemy) {
+          damageEnemy(obj.userData.id, 3); // Nail bat does more damage
+          recordShot(true);
+          return;
+        }
+        obj = obj.parent;
+      }
+    }
+    recordShot(false);
+  };
+
+  const flamethrowerAttack = () => {
+    // Play flamethrower sound only once when firing starts
+    if (isFiring && !flamethrowerSoundPlaying.current) {
+      audioManager.playSound('flamethrower', 0.4);
+      flamethrowerSoundPlaying.current = true;
+    }
+    
+    raycaster.current.setFromCamera(new Vector2(0, 0), camera);
+    const intersects = raycaster.current.intersectObjects(scene.children, true);
+
+    for (const hit of intersects) {
+      if (hit.distance > WEAPON_STATS.flamethrower.range) continue;
+      
+      let obj: Object3D | null = hit.object;
+      while (obj) {
+        if (obj.userData?.isBoss) {
+          damageBoss(WEAPON_STATS.flamethrower.damage);
+          recordShot(true);
+          return;
+        }
+        if (obj.userData?.isEnemy) {
+          damageEnemy(obj.userData.id, 1);
+          recordShot(true);
+          return;
+        }
+        obj = obj.parent;
+      }
+    }
+  };
 
   return (
     <group ref={weaponRef}>

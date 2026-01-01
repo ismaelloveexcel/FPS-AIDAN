@@ -227,6 +227,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   
   startGame: () => {
+    const { difficulty } = get();
     set({ 
       isPlaying: true, 
       isGameOver: false, 
@@ -467,7 +468,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         break;
     }
 
-    return updates;
+    return updates as GameState;
   }),
 
   // Flashlight
@@ -504,7 +505,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     isPlaying: false 
   }),
 
-  // Boss phase actions
+  // Vecna boss mechanics
   setBossPhase: (phase) => set((state) => {
     if (!state.boss) return state;
     return { boss: { ...state.boss, phase } };
@@ -516,12 +517,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
 
   activateClockCurse: () => set((state) => {
-    if (!state.boss) return state;
+    if (!state.boss || state.boss.type !== 'vecna') return state;
     return { boss: { ...state.boss, clockCurseActive: true } };
   }),
 
   spawnVines: () => set((state) => {
-    if (!state.boss) return state;
+    if (!state.boss || state.boss.type !== 'vecna') return state;
     return { boss: { ...state.boss, hasVines: true } };
   })
 }));

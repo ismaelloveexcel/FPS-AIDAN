@@ -1,11 +1,10 @@
 import { useBox } from '@react-three/cannon';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, useEffect } from 'react';
 import { Vector3 } from 'three';
 import { useGameStore, ENEMY_STATS } from './store';
 import * as THREE from 'three';
-import { useGLTF } from '@react-three/drei';
-import { useGameAssetPath } from './useGameAsset';
+import { audioManager } from './AudioManager';
 
 interface EnemyProps {
   id: string;
@@ -13,32 +12,97 @@ interface EnemyProps {
   health: number;
 }
 
-function EnemyModel({ modelPath, damageGlow }: { modelPath: string; damageGlow: number }) {
-  const { scene } = useGLTF(modelPath);
-  const clonedScene = scene.clone();
+// Demodog - smaller demogorgon-like creature with chase AI
+export function Enemy({ id, position, health }: EnemyProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const currentPos = useRef(new Vector3(...position));
+  const lastDamageTime = useRef(0);
+  const lastGrowlTime = useRef(0);
   
-  useEffect(() => {
-    clonedScene.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        if (child.material) {
-          const mat = child.material as THREE.MeshStandardMaterial;
-          mat.emissiveIntensity = damageGlow;
+  const { camera } = useThree();
+  const currentLevel = useGameStore(state => state.currentLevel);
+  const takeDamage = useGameStore(state => state.takeDamage);
+  const isPlaying = useGameStore(state => state.isPlaying);
+  
+  const stats = ENEMY_STATS[currentLevel];
+
+  const [ref, api] = useBox(() => ({
+    mass: 1,
+    position,
+    args: [1.2, 1.2, 1.5],
+    userData: { id, isEnemy: true },
+    onCollide: (e) => {
+      // Check if collided with player
+      if (e.body?.userData?.isPlayer) {
+        const now = Date.now();
+        if (now - lastDamageTime.current > 1000) { // Damage cooldown
+          takeDamage(stats.damage);
+          audioManager.playSound('damage-taken', 0.8);
+          lastDamageTime.current = now;
         }
       }
-    });
-  }, [clonedScene, damageGlow]);
-  
-  return <primitive object={clonedScene} scale={1.5} />;
-}
+    }
+  }));
 
-// Fallback procedural enemy geometry
-function ProceduralEnemy({ colors, damageGlow }: { colors: { body: string; accent: string; glow: string }; damageGlow: number }) {
+  // Subscribe to position updates
+  useEffect(() => {
+    const unsubscribe = api.position.subscribe((p) => {
+      currentPos.current.set(p[0], p[1], p[2]);
+    });
+    return unsubscribe;
+  }, [api.position]);
+
+  // Level-based color schemes
+  const colorSchemes = {
+    1: { body: '#2a1a1a', accent: '#8b0000', glow: '#ff0000' },
+    2: { body: '#1a1a2a', accent: '#4a0050', glow: '#aa00ff' },
+    3: { body: '#1a0a0a', accent: '#550000', glow: '#ff2200' },
+  };
+  
+  const colors = colorSchemes[currentLevel];
+
+  useFrame(({ clock }) => {
+    if (!isPlaying) return;
+    
+    // Occasional growl sounds
+    const now = Date.now();
+    if (now - lastGrowlTime.current > 5000 + Math.random() * 10000) {
+      audioManager.playSound('enemy-growl', 0.3);
+      lastGrowlTime.current = now;
+    }
+    
+    // Chase AI - move towards player (camera position)
+    const playerPos = camera.position;
+    const direction = new Vector3()
+      .subVectors(playerPos, currentPos.current)
+      .normalize();
+    
+    // Move towards player
+    const speed = stats.speed;
+    api.velocity.set(
+      direction.x * speed,
+      0, // Keep on ground
+      direction.z * speed
+    );
+
+    // Animation
+    if (groupRef.current) {
+      // Face the player
+      groupRef.current.lookAt(playerPos.x, groupRef.current.position.y, playerPos.z);
+      // Scuttling animation
+      groupRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 8) * 0.1;
+    }
+  });
+
+  // Health-based visual feedback
+  const maxHealth = ENEMY_STATS[currentLevel].health;
+  const healthPercent = health / maxHealth;
+  const damageGlow = healthPercent < 1 ? 0.5 + (1 - healthPercent) * 0.5 : 0.3;
+
   return (
-    <>
-      {/* Body */}
-      <mesh castShadow receiveShadow>
+    <group ref={groupRef} position={position}>
+      <mesh ref={ref as any} castShadow receiveShadow>
+        {/* Body */}
         <capsuleGeometry args={[0.4, 0.8, 4, 8]} />
         <meshStandardMaterial 
           color={colors.body}
@@ -100,104 +164,6 @@ function ProceduralEnemy({ colors, damageGlow }: { colors: { body: string; accen
         intensity={0.5 + damageGlow} 
         distance={3} 
       />
-    </>
-  );
-}
-
-// Demodog - smaller demogorgon-like creature with chase AI
-export function Enemy({ id, position, health }: EnemyProps) {
-  const groupRef = useRef<THREE.Group>(null);
-  const currentPos = useRef(new Vector3(...position));
-  const lastDamageTime = useRef(0);
-  
-  const { camera } = useThree();
-  const currentLevel = useGameStore(state => state.currentLevel);
-  const takeDamage = useGameStore(state => state.takeDamage);
-  const isPlaying = useGameStore(state => state.isPlaying);
-  
-  // Check for generated enemy model
-  const enemyModelPath = useGameAssetPath('demogorgon_minion');
-  
-  const stats = ENEMY_STATS[currentLevel];
-
-  const [ref, api] = useBox(() => ({
-    mass: 1,
-    position,
-    args: [1.2, 1.2, 1.5],
-    userData: { id, isEnemy: true },
-    onCollide: (e) => {
-      // Check if collided with player
-      if (e.body?.userData?.isPlayer) {
-        const now = Date.now();
-        if (now - lastDamageTime.current > 1000) { // Damage cooldown
-          takeDamage(stats.damage);
-          lastDamageTime.current = now;
-        }
-      }
-    }
-  }));
-
-  // Subscribe to position updates
-  useEffect(() => {
-    const unsubscribe = api.position.subscribe((p) => {
-      currentPos.current.set(p[0], p[1], p[2]);
-    });
-    return unsubscribe;
-  }, [api.position]);
-
-  // Level-based color schemes
-  const colorSchemes = {
-    1: { body: '#2a1a1a', accent: '#8b0000', glow: '#ff0000' },
-    2: { body: '#1a1a2a', accent: '#4a0050', glow: '#aa00ff' },
-    3: { body: '#1a0a0a', accent: '#550000', glow: '#ff2200' },
-  };
-  
-  const colors = colorSchemes[currentLevel];
-
-  useFrame(({ clock }) => {
-    if (!isPlaying) return;
-    
-    // Chase AI - move towards player (camera position)
-    const playerPos = camera.position;
-    const direction = new Vector3()
-      .subVectors(playerPos, currentPos.current)
-      .normalize();
-    
-    // Move towards player
-    const speed = stats.speed;
-    api.velocity.set(
-      direction.x * speed,
-      0, // Keep on ground
-      direction.z * speed
-    );
-
-    // Animation
-    if (groupRef.current) {
-      // Face the player
-      groupRef.current.lookAt(playerPos.x, groupRef.current.position.y, playerPos.z);
-      // Scuttling animation
-      groupRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 8) * 0.1;
-    }
-  });
-
-  // Health-based visual feedback
-  const maxHealth = ENEMY_STATS[currentLevel].health;
-  const healthPercent = health / maxHealth;
-  const damageGlow = healthPercent < 1 ? 0.5 + (1 - healthPercent) * 0.5 : 0.3;
-
-  return (
-    <group ref={groupRef} position={position}>
-      <mesh ref={ref as any} visible={false}>
-        <boxGeometry args={[1.2, 1.2, 1.5]} />
-      </mesh>
-      
-      {enemyModelPath ? (
-        <Suspense fallback={<ProceduralEnemy colors={colors} damageGlow={damageGlow} />}>
-          <EnemyModel modelPath={enemyModelPath} damageGlow={damageGlow} />
-        </Suspense>
-      ) : (
-        <ProceduralEnemy colors={colors} damageGlow={damageGlow} />
-      )}
     </group>
   );
 }
